@@ -110,13 +110,15 @@ function DiffEqBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata
 
     # Pass the default state into the underlying solver
     # TODO: Remove the need for this in DiffCorrectAxisymmetric
-    userdata = deepcopy(userdata)
-    userdata[:real_state] = real_state
+    # TODO: Removed to avoid deprecation warning in DiffEqBase.solve()
+    #  - buuut presumably DiffCorrectAxisymmetric is now sad
+    # userdata = deepcopy(userdata)
+    # userdata[:real_state] = real_state
 
     # Copy the callbacks (for thread-safety)
     callback = deepcopy(callback)
 
     # Call the underlying solver
-    raw_sol = solve(real_state.prob, alg; userdata, callback, kwargs...)
+    raw_sol = solve(real_state.prob, alg; callback, kwargs...)
     return Trajectory(state.model, default_frame, raw_sol)
 end
