@@ -8,6 +8,7 @@ module SpiceUtils
     using Pkg.Artifacts
     using ForwardDiff
     using StaticArrays
+    using Symbolics: @register_symbolic
     using Memoize
 
     export mass_fraction
@@ -97,7 +98,7 @@ module SpiceUtils
     get_pos(t, target, reference; relative="ECLIPJ2000") = SVector{3,Float64}(spkpos(String(target), t, relative, "none", String(reference))[1])
     get_pos(t::ForwardDiff.Dual, target, reference; kwargs...) = get_pos(ForwardDiff.value(t), String(target), String(reference); kwargs...)
     get_pos(t::Num, tgt, ref) = get_pos(t, Num(tgt), Num(ref))
-    ModelingToolkit.@register get_pos(t, target, reference)
+    @register_symbolic get_pos(t, target, reference)
 
     @doc "Get a target body state from SPICE kernels"
     get_state(t, target, reference; relative="ECLIPJ2000") = SVector{6,Float64}(spkezr(String(target), t, relative, "none", String(reference))[1])

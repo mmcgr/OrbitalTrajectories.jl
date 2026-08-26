@@ -10,12 +10,12 @@ struct _CR3BP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
     ode_stm_f  :: F2
 end
 
-function ModelingToolkit.ODESystem(::Type{_CR3BP_ODEFunctions})
+function ModelingToolkitBase.System(::Type{_CR3BP_ODEFunctions}; name = :_CR3BP_ODEFunctions)
     # Build from the ER3BP equations (with eccentricity = 0 for circular)
-    eqs_er3bp = ODESystem(_ER3BP_ODEFunctions)
+    eqs_er3bp = System(_ER3BP_ODEFunctions)
     (μ, e) = parameters(eqs_er3bp)
     eqs = [eq.lhs ~ simplify(substitute(eq.rhs, e => 0)) for eq in equations(eqs_er3bp)]
-    return ODESystem(eqs, independent_variable(eqs_er3bp), states(eqs_er3bp), [μ])
+    return System(eqs, independent_variable(eqs_er3bp), unknowns(eqs_er3bp), [μ]; name)
 end
 
 # Build the equations at pre-compile time

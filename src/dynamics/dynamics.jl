@@ -6,7 +6,7 @@ module Dynamics
     using Unitful
     using DifferentialEquations
     using DiffEqBase
-    using DiffEqSensitivity
+    using SciMLSensitivity
     using SciMLBase
     using LinearAlgebra
     using ModelingToolkit
@@ -18,8 +18,8 @@ module Dynamics
     using SimpleTraits
     using StaticArrays
     using ProgressMeter
-    using RecipesBase
     using PhysicalConstants.CODATA2014: NewtonianConstantOfGravitation
+    using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm
 
     # Required to ensure that we can precompile ODEFunctions (which needs to be
     # done in our own cache).
@@ -32,7 +32,7 @@ module Dynamics
 
     # Dynamical models
     abstract type Abstract_DynamicalModel end
-    abstract type Abstract_ModelODEFunctions <: ModelingToolkit.AbstractODESystem end
+    abstract type Abstract_ModelODEFunctions <: ModelingToolkit.AbstractSystem end
     abstract type Abstract_R3BPModel <: Abstract_DynamicalModel end
     abstract type Abstract_R4BPModel <: Abstract_DynamicalModel end
 

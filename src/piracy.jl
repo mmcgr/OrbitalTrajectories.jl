@@ -55,7 +55,7 @@ using SymbolicUtils: Sym, Term, istree
 
 using SymbolicUtils.Rewriters
 
-using DataStructures
+using OrderedCollections: OrderedDict
 
 ### Common subexprssion evaluation
 

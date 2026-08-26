@@ -9,13 +9,13 @@ struct _BC4BP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
     ode_stm_f  :: F2
 end
 
-function ModelingToolkit.ODESystem(::Type{_BC4BP_ODEFunctions})
+function ModelingToolkitBase.System(::Type{_BC4BP_ODEFunctions}; name = :_BC4BP_ODEFunctions)
     @parameters  μ   # Mass fraction (smaller 2 bodies)
     @parameters  μ2  # Mass fraction (note: inverse, as per [DeiTos2018])
     @parameters  a3  # Distance to 3rd body
     @parameters  α0  # Initial phase angle of 3rd body
     @parameters  ω3  # Angular velocity of 3rd body
-    @parameters  t   # Time
+    @independent_variables  t   # Time
     @variables   x(t) y(t) z(t)
     D, D2 = Differential(t), Differential(t)^2
 
@@ -36,10 +36,14 @@ function ModelingToolkit.ODESystem(::Type{_BC4BP_ODEFunctions})
 
     # Add up the equations [DeiTos2018 Eq. 21]
     forces = sum([coeff .* (v / norm(v)^3) for (coeff, v) in vectors])
-    eqs    = @. D2(p) ~ [+2D(y) + x, -2D(x) + y, 0] + forces
+    eqs    = [
+        D2(x) ~ +2D(y) + x + forces[1],
+        D2(y) ~ -2D(x) + y + forces[2],
+        D2(z) ~ forces[3],
+    ]
 
     # Simplify and return the system
-    return ODESystem(simplify.(eqs), t, [x, y, z], [μ, μ2, a3, α0, a3, ω3])
+    return System(simplify(eqs), t, [x, y, z], [μ, μ2, a3, α0, a3, ω3]; name)
 end
 
 # Build the equations at pre-compile time

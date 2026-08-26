@@ -10,25 +10,41 @@ struct _ER3BP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
     ode_stm_f  :: F2
 end
 
-function ModelingToolkit.ODESystem(::Type{_ER3BP_ODEFunctions})
+function ModelingToolkitBase.System(::Type{_ER3BP_ODEFunctions}; name = :_ER3BP_ODEFunctions)
     @parameters  μ  # Mass fraction
     @parameters  e  # Eccentricity
-    @parameters  f  # True anomaly
+    @independent_variables  f  # True anomaly
     @variables   x(f) y(f) z(f)
     D, D2 = Differential(f), Differential(f)^2
     Dx, Dy, Dz = Differential.((x, y, z))
 
     # [DeiTos2017, Eqs. 14]
     # NOTE: need to expand the RHS derivatives before calling order-lowering
+    # Original
+    # ==========================================
+    # ω = elliptical_potential(μ, (x, y, z), f, e)
+    # eqs = [
+    #     # D2(x) ~ +2D(y),
+    #     D2(x) ~ +2D(y) + Dx(ω),
+    #     D2(y) ~ -2D(x) + Dy(ω),
+    #     D2(z) ~        + Dz(ω)
+    # ]
+    # ------------------------------------------
+    # Expanded derivatives
+    # ==========================================
     ω = elliptical_potential(μ, (x, y, z), f, e)
-    return ODESystem([
-            D2(x) ~ +2D(y) + Dx(ω),
-            D2(y) ~ -2D(x) + Dy(ω),
-            D2(z) ~        + Dz(ω)
-        ], 
+    eqs = [
+        # D2(x) ~ +2D(y),
+        D2(x) ~ +2D(y) + expand_derivatives(Dx(ω)),
+        D2(y) ~ -2D(x) + expand_derivatives(Dy(ω)),
+        D2(z) ~        + expand_derivatives(Dz(ω))
+    ]
+    # ------------------------------------------
+    return System(eqs,
         f,
         [x, y, z],
-        [μ, e]
+        [μ, e];
+        name,
     )
 end
 
