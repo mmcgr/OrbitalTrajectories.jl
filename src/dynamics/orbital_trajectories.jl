@@ -6,15 +6,25 @@ export collision, check_distance, crashed
 # ORBITAL PROBLEMS #
 #------------------#
 
-struct State{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,uType,tType,isinplace,O<:SciMLBase.AbstractODEProblem{uType,tType,isinplace}} <: SciMLBase.AbstractODEProblem{uType,tType,isinplace}
+struct State{
+    M<:Abstract_DynamicalModel,
+    F<:Abstract_ReferenceFrame,
+    uType,
+    tType,
+    isinplace,
+    O<:SciMLBase.AbstractODEProblem{uType, tType, isinplace}
+} <: SciMLBase.AbstractODEProblem{uType, tType, isinplace}
     model :: M
     frame :: F  # Reference frame that the problem's u0 is defined in
     prob :: O
 end
 State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::AbstractArray, tspan) =
     State(model, reference_frame, MArray{Tuple{size(u0)...}}(u0), tspan)
-State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::StaticArray, tspan) =
-    State(model, reference_frame, ODEProblem(model, u0, tspan, parameters(model)))
+function State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::StaticArray, tspan)
+    problem = SciMLBase.ODEProblem(model, u0, tspan, parameters(model))
+    state = State(model, reference_frame, problem)
+    return state
+end
 State(model::Abstract_DynamicalModel, u0::AbstractArray, tspan) = State(model, default_reference_frame(model), u0, tspan)
 
 struct Trajectory{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,T,N,A,O<:DiffEqBase.AbstractTimeseriesSolution{T,N,A},} <: DiffEqBase.AbstractTimeseriesSolution{T,N,A}

@@ -8,7 +8,7 @@ module SpiceUtils
     using Pkg.Artifacts
     using ForwardDiff
     using StaticArrays
-    using Symbolics: @register_symbolic
+    using Symbolics: @register_array_symbolic, symbolic_to_float
     using Memoize
 
     export mass_fraction
@@ -95,13 +95,25 @@ module SpiceUtils
     end
 
     @doc "Get a target body position from SPICE kernels."
-    get_pos(t, target, reference; relative="ECLIPJ2000") = SVector{3,Float64}(spkpos(String(target), t, relative, "none", String(reference))[1])
-    get_pos(t::ForwardDiff.Dual, target, reference; kwargs...) = get_pos(ForwardDiff.value(t), String(target), String(reference); kwargs...)
-    get_pos(t::Num, tgt, ref) = get_pos(t, Num(tgt), Num(ref))
-    @register_symbolic get_pos(t, target, reference)
+    # function get_pos(t::Float64, target::Symbol, reference::Symbol; relative="ECLIPJ2000")
+    #     res = spkpos(target, t, relative, "none", reference)[1]
+    #     return res
+    # end
+    function get_pos(t, target::Symbol, reference::Symbol; relative="ECLIPJ2000")
+        res = Tuple{Float64, Float64, Float64}(spkpos(target, t, relative, "none", reference)[1])
+        return res
+    end
+    get_pos(t::ForwardDiff.Dual, target::Symbol, reference::Symbol; kwargs...) = get_pos(ForwardDiff.value(t), target, reference; kwargs...)
+#    get_pos(t::Num, tgt::Symbol, ref::Symbol) = get_pos(t, tgt, ref)
+    get_pos(t, target::String, reference::String; kwargs...) = get_pos(t, Symbol(target), Symbol(reference); kwargs...)
+    @register_array_symbolic get_pos(t, target::String, reference::String) begin
+        size=(3,)
+        ndims=1
+        eltype=Float64
+    end
 
     @doc "Get a target body state from SPICE kernels"
-    get_state(t, target, reference; relative="ECLIPJ2000") = SVector{6,Float64}(spkezr(String(target), t, relative, "none", String(reference))[1])
+    get_state(t, target, reference; relative="ECLIPJ2000") = SVector{6,Float64}(spkezr(String(target), symbolic_to_float(t), relative, "none", String(reference))[1])
     get_state(t::ForwardDiff.Dual, target, reference; kwargs...) = get_state(ForwardDiff.value(t), target, reference; kwargs...)
 
     @doc "Get body gravitational constant (GM) from SPICE kernels"

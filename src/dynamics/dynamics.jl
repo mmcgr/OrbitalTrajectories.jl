@@ -3,7 +3,7 @@ module Dynamics
 
     using SPICE
     using Plots
-    using Unitful
+    using DynamicQuantities
     using DifferentialEquations
     using DiffEqBase
     using SciMLSensitivity

@@ -13,7 +13,7 @@ First, we load all necessary packages:
 using OrbitalTrajectories
 using DifferentialEquations  # To propagate trajectories
 using Plots                  # To plot trajectories
-using Unitful                # Units (u"km", u"d" (days)) and unit conversion
+using DynamicQuantities      # Units (u"km", u"d" (days)) and unit conversion
 using DiffEqUncertainty      # To compute the Koopman expectation
 using Distributions          # To define uncertainty distributions
 nothing # hide

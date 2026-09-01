@@ -29,15 +29,17 @@ function R4BPSystemProperties(a::Symbol, b::Symbol, c::Symbol, α0::Number=0.; k
 
     # Run-time compute remaining values
     GM = @. SpiceUtils.get_GM((a, b, c))u"km^3/s^2"
-    m3 = GM[3] / (GM[1] + GM[2])
+    m3::Quantity = GM[3] / (GM[1] + GM[2])
     state_3 = Array(SpiceUtils.get_state(0., a, c))
     elements_3 = oscltx(state_3, 0., ustrip(u"km^3/s^2", GM[3]))
-    a3 = get(kwargs, :a3, elements_3[10]u"km" / r3bp.L)
-    ω3 = get(kwargs, :ω3, √((1 + m3) / a3^3) - 1)  # [DeiTos2017 eq.18]
-    μ2 = get(kwargs, :μ2, sum(GM) / (GM[1] + GM[2]))
-    μ = get(kwargs, :μ, r3bp.μ)
+    # ensure that the mass ratio is a Quantity
+    a3::Quantity = get(kwargs, :a3, elements_3[10]u"km" / r3bp.L)
+    ω3::Quantity = get(kwargs, :ω3, √((1 + m3) / a3^3) - 1)  # [DeiTos2017 eq.18]
+    μ2::Quantity = get(kwargs, :μ2, sum(GM) / (GM[1] + GM[2]))
+    μ::Quantity = get(kwargs, :μ, r3bp.μ)
+    qα0::Quantity = α0
 
-    R4BPSystemProperties(a, b, c, m3, a3, ω3, μ, μ2, α0)
+    R4BPSystemProperties(a, b, c, m3, a3, ω3, μ, μ2, qα0)
 end
 
 Base.show(io::IO, x::R4BPSystemProperties) = print(io, parameters(x))#(a=x.b1, b=x.b2, c=x.b3, α0=x.α0))

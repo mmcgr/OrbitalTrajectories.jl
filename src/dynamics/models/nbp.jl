@@ -67,8 +67,11 @@ end
     end
 
     # Equations of motion: sum of all accelerations
-    eqs = @. D2(pos) ~ sum(accelerations)
-
+    eqs = [
+        D2(x) ~ accelerations[1],
+        D2(y) ~ accelerations[2],
+        D2(z) ~ accelerations[3],
+    ]
     # Build the 2nd-order ODE props
     return System(eqs, t, pos, []; name)
 end
@@ -85,7 +88,8 @@ function EphemerisNBP(bodies::Vararg{Symbol}; center=nothing, kwargs...)
     all_bodies = isnothing(center) ? (bodies[1], bodies...) : (center, bodies...)
     bodies_symbols = @. Symbol(lowercase(String(all_bodies)))
     props = NBPSystemProperties(bodies_symbols...)
-    EphemerisNBP(_NBP_ODEFunctions(props; kwargs...), props)
+    o::_NBP_ODEFunctions = _NBP_ODEFunctions(props; kwargs...)
+    EphemerisNBP(o, props)
 end
 
 Base.show(io::IO, x::EphemerisNBP) = print(io, "$(nameof(typeof(x)))$(x.props)")
@@ -117,8 +121,10 @@ function convert_to_frame(state::State{<:EphemerisNBP,<:Abstract_ReferenceFrame}
     converted_u0 = state_to_frame(state, frame, to_synodic, inv_synodic)
     # end
 
-    prob1 = remake(state.prob; u0=converted_u0)
-    state = State(state.model, frame, prob1)
+    prob1::typeof(state.prob) = remake(state.prob; u0=converted_u0)
+    model::EphemerisNBP = state.model
+
+    state = State(model, frame, prob1)
     return state
 end
 

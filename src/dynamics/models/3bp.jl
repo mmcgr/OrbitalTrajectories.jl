@@ -12,16 +12,16 @@ Base.show(io::IO, x::Abstract_R3BPModel) = print(io, "$(nameof(typeof(x)))$(x.pr
 #-------------------#
 # SYSTEM PROPERTIES # 
 #-------------------#
-struct R3BPSystemProperties{L <: Unitful.Length, V <: Unitful.Velocity, T <: Unitful.Time}
-    b1 :: Symbol        # Identifier of body 1
-    b2 :: Symbol        # Identifier of body 1
-    μ  :: Float64       # Mass ratio
-    L  :: L             # Distance between centers
-    V  :: V             # Orbital velocity of larger body
-    T  :: T             # Time unit: orbital period of smaller body (per radian)
-    e  :: Float64       # Eccentricity
-    R1 :: SVector{3,L}  # Radius of central body
-    R2 :: SVector{3,L}  # Radius of smaller body
+struct R3BPSystemProperties
+    b1 :: Symbol               # Identifier of body 1
+    b2 :: Symbol               # Identifier of body 2
+    μ  :: Float64              # Mass ratio
+    L  :: Quantity             # Distance between centers
+    V  :: Quantity             # Orbital velocity of larger body
+    T  :: Quantity             # Time unit: orbital period of smaller body (per radian)
+    e  :: Float64              # Eccentricity
+    R1 :: SVector{3,Quantity}  # Radius of central body
+    R2 :: SVector{3,Quantity}  # Radius of smaller body
 end
 
 @memoize function R3BPSystemProperties(a::Symbol, b::Symbol; kwargs...)

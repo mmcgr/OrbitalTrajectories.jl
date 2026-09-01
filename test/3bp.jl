@@ -1,7 +1,7 @@
 using OrbitalTrajectories
 
 using Test
-using Unitful
+using DynamicQuantities
 
 function check_libration_points(model)
     L = libration_points(model)

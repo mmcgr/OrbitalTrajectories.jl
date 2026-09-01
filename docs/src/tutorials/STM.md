@@ -134,7 +134,7 @@ nothing # hide
 The test cases are plotted and traced for each of the above models as follows.
 
 ```@example 1
-using Unitful                # Units (u"km", u"d" (days)) and unit conversion
+using DynamicQuantities      # Units (u"km", u"d" (days)) and unit conversion
 using LaTeXStrings           # So we can use Latex formatting in strings
 using Plots.PlotMeasures     # To change plot margins using "mm" units
 

@@ -106,39 +106,39 @@ end
     sol.sol
 end
 
-# @recipe function f(sol::Union{DiffEqBase.ODESolution{T}, OrdinaryDiffEq.ODECompositeSolution{T}}) where {T <: ForwardDiff.Dual}
-#     # TODO: Fix the type dispatch on this, since it's doing piracy.
+@recipe function f(sol::DiffEqBase.ODESolution{T}) where {T <: ForwardDiff.Dual}
+    # TODO: Fix the type dispatch on this, since it's doing piracy.
 
-#     trace_vars = get(plotattributes, :trace, false)
-#     trace_stability = get(plotattributes, :trace_stability, false)
-#     denseplot = get(plotattributes, :denseplot, true)
-#     plotdensity = get(plotattributes, :plotdensity, 1000)
+    trace_vars = get(plotattributes, :trace, false)
+    trace_stability = get(plotattributes, :trace_stability, false)
+    denseplot = get(plotattributes, :denseplot, true)
+    plotdensity = get(plotattributes, :plotdensity, 1000)
 
-#     tspan = ForwardDiff.value.(denseplot ? range(sol.t[begin], sol.t[end], length=plotdensity) : sol.t)
-#     tspan_norm = @. (tspan - tspan[begin]) / (tspan[end] - tspan[begin])
-#     u_vals = sol.(tspan)
+    tspan = ForwardDiff.value.(denseplot ? range(sol.t[begin], sol.t[end], length=plotdensity) : sol.t)
+    tspan_norm = @. (tspan - tspan[begin]) / (tspan[end] - tspan[begin])
+    u_vals = sol.(tspan)
 
-#     if trace_vars
-#         STMs = hcat([reshape(v, length(v)) for v in extract_STMs(u_vals)]...)'
-#         @series begin
-#             label --> ""
-#             legend --> false
-#             tspan_norm, STMs
-#         end
-#     elseif trace_stability
-#         stability_indices = norm.(extract_stability(u_vals))'
-#         sorted_indices = hcat(map(sort, eachslice(stability_indices, dims=1))...)[4:6,:]'
-#         max_eigenvalues = map(maximum, eachslice(sorted_indices, dims=1))
-#         @series begin
-#             label --> ""
-#             legend --> false
-#             tspan_norm, max_eigenvalues
-#         end
-#     else
-#         vars = get(plotattributes, :vars, (1,2))
-#         ([[u[v].value for u in u_vals] for v in vars]...,)
-#     end
-# end
+    if trace_vars
+        STMs = hcat([reshape(v, length(v)) for v in extract_STMs(u_vals)]...)'
+        @series begin
+            label --> ""
+            legend --> false
+            tspan_norm, STMs
+        end
+    elseif trace_stability
+        stability_indices = norm.(extract_stability(u_vals))'
+        sorted_indices = hcat(map(sort, eachslice(stability_indices, dims=1))...)[4:6,:]'
+        max_eigenvalues = map(maximum, eachslice(sorted_indices, dims=1))
+        @series begin
+            label --> ""
+            legend --> false
+            tspan_norm, max_eigenvalues
+        end
+    else
+        vars = get(plotattributes, :vars, (1,2))
+        ([[u[v].value for u in u_vals] for v in vars]...,)
+    end
+end
 
 @recipe function f(model::Abstract_DynamicalModel, frame::Abstract_ReferenceFrame)
     nothing
