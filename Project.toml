@@ -36,6 +36,7 @@ SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
+Aqua = "0.8.16"
 DiffEqBase = "7.18.2"
 DifferentialEquations = "8.1.0"
 Downloads = "1.7.0"
@@ -56,6 +57,9 @@ julia = "1.12"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua"]
+test = ["Aqua", "BenchmarkTools", "SafeTestsets", "Test"]
