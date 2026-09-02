@@ -2,12 +2,11 @@
 # GENERIC MODEL METHODS #
 #-----------------------#
 
-import ..cse
 using Symbolics
 
 # wrap_code: perform common substring elimination to improve performance of the resulting models.
 @doc """Generic constructor for a DynamicalModel's underlying ODEFunctions."""
-function (T::Type{<:Abstract_ModelODEFunctions})(args...; wrap_code=(cse, cse), kwargs...)
+function (T::Type{<:Abstract_ModelODEFunctions})(args...; kwargs...)
     # TODO: Is the @mtkcompile version equivalent to the original?
     # _ode = System(T, args...; kwargs...)
 
@@ -24,8 +23,8 @@ function (T::Type{<:Abstract_ModelODEFunctions})(args...; wrap_code=(cse, cse), 
 
     # Generate the functions
     # TODO: Add support for tgrad (need to define derivative(get_pos) for EphemerisNBP)
-    ode_f = ODEFunction(ode; jac=true, tgrad=false, eval_expression=false, eval_module=@__MODULE__, wrap_code)
-    ode_stm_f = STM_ODEFunction(ode, ode_f; wrap_code)
+    ode_f = ODEFunction(ode; jac=true, tgrad=false, eval_expression=false, eval_module=@__MODULE__)
+    ode_stm_f = STM_ODEFunction(ode, ode_f)
     T(ode, ode_f, ode_stm_f)
 end
 
