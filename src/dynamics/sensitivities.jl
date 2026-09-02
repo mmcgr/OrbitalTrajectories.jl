@@ -19,17 +19,17 @@ sensitivity(m::Module, args...; kwargs...) = sensitivity(Val(first(fullname(m)))
 function sensitivity(::Val{:ForwardDiff}, state, desired_frame=state.frame, alg=DEFAULT_ALG; kwargs...)
     ForwardDiff.jacobian(state.u0) do u0
         new_state = remake(state, u0=u0)
-        return [convert_to_frame(solve(new_state, alg; kwargs...), desired_frame).sol[end]]
+        return convert_to_frame(solve(new_state, alg; kwargs...), desired_frame).sol[:, end]
     end
 end
 function sensitivity(::Val{:FiniteDiff}, state, desired_frame=state.frame, alg=DEFAULT_ALG; kwargs...)
     FiniteDiff.finite_difference_jacobian(state.u0) do u0
         new_state = remake(state, u0=u0)
-        return [convert_to_frame(solve(new_state, alg; kwargs...), desired_frame).sol[end]]
+        return convert_to_frame(solve(new_state, alg; kwargs...), desired_frame).sol[:, end]
     end
 end
 function sensitivity(v::Val{:VariationalEquations}, state, args...; kwargs...)
-    STM_VE = sensitivity_trace(v, state, args...; kwargs...).sol[end]
+    STM_VE = sensitivity_trace(v, state, args...; kwargs...).sol[:, end]
     dim = length(state.u0)
     return reshape(STM_VE[dim+1:end], (dim, dim))
 end
