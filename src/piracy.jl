@@ -23,6 +23,8 @@ LinearAlgebra.norm(a::AbstractArray{<:ModelingToolkit.Num}) = sum(a .^ 2)^(1/2)
 # --------------------------------#
 # Common Subexpression Evaluation #
 # --------------------------------#
+# TODO: Convert to use the SymbolicUtils cse implementation (the updated and merged version of the below)
+# instead of the one below
 using SymbolicUtils.Code: Let, Func, MakeArray, SetArray, (←), LiteralExpr, AtIndex
 using Symbolics: Equation
 
@@ -53,7 +55,7 @@ using Symbolics: Equation
 
 using SymbolicUtils
 
-using SymbolicUtils: Sym, Term, istree
+using SymbolicUtils: Sym, Term, iscall
 
 using SymbolicUtils.Rewriters
 
@@ -64,31 +66,31 @@ using OrderedCollections: OrderedDict
 newsym() = Sym{Number}(gensym("cse"))
 
 function _cse(expr, dict=OrderedDict())
-    r = @rule ~x::istree => haskey(dict, ~x) ? dict[~x] : dict[~x] = newsym()
-    final = Postwalk(Chain([r]))(expr)
+    r = @rule ~x::iscall => haskey(dict, ~x) ? dict[~x] : dict[~x] = newsym()
+    return Postwalk(Chain([r]))(expr)
 end
 
 function cse(expr)
-    !istree(expr) && return expr
+    !iscall(expr) && return expr
     dict=OrderedDict()
     final = _cse(expr, dict)
-    Let([var ← ex for (ex, var) in pairs(dict)], final)
+    return Let([var ← ex for (ex, var) in pairs(dict)], final)
 end
 
 function _cse(exprs::AbstractArray)
     dict = OrderedDict()
     final = map(ex->_cse(ex, dict), exprs)
-    ([var ← ex for (ex, var) in pairs(dict)], final)
+    return ([var ← ex for (ex, var) in pairs(dict)], final)
 end
 
 function cse(x::MakeArray)
     assigns, expr = _cse(x.elems)
-    Let(assigns, MakeArray(expr, x.similarto, x.output_eltype))
+    return Let(assigns, MakeArray(expr, x.similarto, x.output_eltype))
 end
 
 function cse(x::SetArray)
     assigns, expr = _cse(x.elems)
-    Let(assigns, SetArray(x.inbounds, x.arr, expr))
+    return Let(assigns, SetArray(x.inbounds, x.arr, expr))
 end
 # --------------------------------#
 # End of copyrighted code         #
@@ -96,23 +98,23 @@ end
 
 function _cse(eq::Num, dict)
     final = _cse(Symbolics.value(eq), dict)
-    Num(final)
+    return Num(final)
 end
 
 function _cse(eq::AtIndex, dict)
     final = _cse(eq.elem, dict)
-    AtIndex(eq.i, final)
+    return AtIndex(eq.i, final)
 end
 
 function _cse(eq::Equation, dict)
     lhs = _cse(eq.lhs, dict)
     rhs = _cse(eq.rhs, dict)
-    Equation(lhs, rhs)
+    return Equation(lhs, rhs)
 end
 
 function cse(x::LiteralExpr)
     # XXX: Assumes that the LiteralExpr contains a LineNumber as the first argument
-    LiteralExpr(quote
+    return LiteralExpr(quote
         $(cse.(x.ex.args[2:end])...)
     end)
 end

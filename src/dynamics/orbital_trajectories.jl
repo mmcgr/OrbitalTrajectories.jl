@@ -67,12 +67,18 @@ Base.lastindex(traj::Trajectory) = lastindex(traj.sol.u)
 Base.lastindex(traj::Trajectory, idx) = lastindex(traj.sol.u, idx)
 Base.size(traj::Trajectory) = size(traj.sol.u)
 
-function Base.getproperty(x::T, b::Symbol) where {T<:Union{State,Trajectory}}
+function Base.getproperty(x::T, b::Symbol) where {T<:State}
     if hasfield(T, b)
         return getfield(x, b)
-    else
-        return getproperty(isa(x, State) ? x.prob : x.sol, b)
     end
+    return getproperty(x.prob, b)
+end
+
+function Base.getproperty(x::T, b::Symbol) where {T<:Trajectory}
+    if hasfield(T, b)
+        return getfield(x, b)
+    end
+    return getproperty(x.sol, b)
 end
 
 #---------#

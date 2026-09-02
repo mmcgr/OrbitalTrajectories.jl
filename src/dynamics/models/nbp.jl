@@ -93,7 +93,7 @@ function EphemerisNBP(bodies::Vararg{Symbol}; center=nothing, kwargs...)
 end
 
 Base.show(io::IO, x::EphemerisNBP) = print(io, "$(nameof(typeof(x)))$(x.props)")
-ModelingToolkit.parameters(model::EphemerisNBP) = SVector{0,Float64}()
+ModelingToolkit.parameters(::EphemerisNBP) = SVector{0,Float64}()
 
 # HELPERS
 
@@ -108,7 +108,11 @@ default_synodic_reference_frame(::EphemerisNBP) = SynodicFrame(false)
 primary_body(m::EphemerisNBP) = m.props.center
 secondary_body(m::EphemerisNBP) = m.props.bodies[2]
 
-convert_to_frame(state::State{<:EphemerisNBP,F}, frame::F) where {F<:Abstract_ReferenceFrame} = state
+# Frame conversions
+# Convert a State to a State in a different reference frame.
+
+# No conversion needed if the state is already in the desired frame
+convert_to_frame(state::State{<:EphemerisNBP,F}, ::F) where {F<:Abstract_ReferenceFrame} = state
 function convert_to_frame(state::State{<:EphemerisNBP,<:Abstract_ReferenceFrame}, frame::Abstract_ReferenceFrame)
     # Get the synodic initial state of the secondary body
     # TODO: Fix up the SpiceUtils interface so the arguments are more consistently ordered.
@@ -121,7 +125,7 @@ function convert_to_frame(state::State{<:EphemerisNBP,<:Abstract_ReferenceFrame}
     converted_u0 = state_to_frame(state, frame, to_synodic, inv_synodic)
     # end
 
-    prob1::typeof(state.prob) = remake(state.prob; u0=converted_u0)
+    prob1 = remake(state.prob; u0=converted_u0)
     model::EphemerisNBP = state.model
 
     state = State(model, frame, prob1)
