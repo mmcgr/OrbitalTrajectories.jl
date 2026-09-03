@@ -17,7 +17,7 @@ First, we load all necessary packages:
 using OrbitalTrajectories
 using DifferentialEquations  # To propagate trajectories
 using Plots                  # To plot trajectories
-using Unitful                # Units (u"km", u"d" (days)) and unit conversion
+using DynamicQuantities      # Units (u"km", u"d" (days)) and unit conversion
 ```
 
 
@@ -115,8 +115,8 @@ for (i, (sys, opts)) in enumerate(systems)
 
     # Add a label for the model name
     traj_converted = convert_to_frame(trajectory, u0_frame)
-    annotate!(p, [(traj_converted.sol[end][1] + opts.xoffset,
-                   traj_converted.sol[end][2] - opts.yoffset,
+    annotate!(p, [(traj_converted.sol[:, end][1] + opts.xoffset,
+                   traj_converted.sol[:, end][2] - opts.yoffset,
                    Plots.text("$(nameof(typeof(sys)))" * 
                     ((isa(sys, EphemerisNBP) || isa(sys, BC4BP)) ? "\n(+ $(String(c)))" : ""),
                    opts.color, :left, 9, 0.))]);
