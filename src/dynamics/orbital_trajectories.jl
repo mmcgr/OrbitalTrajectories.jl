@@ -40,7 +40,7 @@ primary_body(traj::Trajectory) = primary_body(traj.model)
 secondary_body(state::State) = secondary_body(state.model)
 secondary_body(traj::Trajectory) = secondary_body(traj.model)
 
-DiffEqBase.remake(state::State; kwargs...) = State(state.model, state.frame, remake(state.prob; kwargs...))
+SciMLBase.remake(state::State; kwargs...) = State(state.model, state.frame, remake(state.prob; kwargs...))
 ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.model)
 
 #---------------#
@@ -50,22 +50,22 @@ ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.mode
 # Interpolation
 (traj::Trajectory)(t::Number) = State(traj.model, traj.frame, traj.sol(t), (t, t))
 function (traj::Trajectory)(t::AbstractArray{<:Number})
-    new_sol = DiffEqBase.build_solution(traj.prob, traj.alg, t, traj.sol(t); interp=traj.interp, retcode=traj.retcode)
+    new_sol = SciMLBase.build_solution(traj.prob, traj.alg, t, traj.sol(t); interp=traj.interp, retcode=traj.retcode)
     return Trajectory(traj.model, traj.frame, new_sol)
 end
 
 # Indexing
 Base.getindex(state::State, idx...) = getindex(state.prob.u0, idx...)
-Base.getindex(traj::Trajectory, idx...) = State(traj.model, traj.frame, getindex(traj.sol, idx...), (traj.sol.t[idx...], traj.sol.t[idx...]))
-Base.getindex(traj::Trajectory, idx::Int) = State(traj.model, traj.frame, getindex(traj.sol, idx), (traj.sol.t[idx], traj.sol.t[idx]))
-Base.getindex(traj::Trajectory, idx::AbstractArray{Int}) = State(traj.model, traj.frame, getindex(traj.sol, idx), (traj.sol.t[idx], traj.sol.t[idx]))
+Base.getindex(traj::Trajectory, idx...) = State(traj.model, traj.frame, getindex(traj.sol.u, idx...), (traj.sol.t[idx...], traj.sol.t[idx...]))
+Base.getindex(traj::Trajectory, idx::Int) = State(traj.model, traj.frame, getindex(traj.sol.u, idx), (traj.sol.t[idx], traj.sol.t[idx]))
+Base.getindex(traj::Trajectory, idx::AbstractArray{Int}) = State(traj.model, traj.frame, getindex(traj.sol.u, idx), (traj.sol.t[idx], traj.sol.t[idx]))
 Base.axes(state::State, idx...) = axes(state.prob, idx...)
-Base.axes(traj::Trajectory, idx...) = axes(traj.sol, idx...)
-Base.firstindex(traj::Trajectory) = firstindex(traj.sol)
-Base.firstindex(traj::Trajectory, idx) = firstindex(traj.sol, idx)
-Base.lastindex(traj::Trajectory) = lastindex(traj.sol)
-Base.lastindex(traj::Trajectory, idx) = lastindex(traj.sol, idx)
-Base.size(traj::Trajectory) = size(traj.sol)
+Base.axes(traj::Trajectory, idx...) = axes(traj.sol.u, idx...)
+Base.firstindex(traj::Trajectory) = firstindex(traj.sol.u)
+Base.firstindex(traj::Trajectory, idx) = firstindex(traj.sol.u, idx)
+Base.lastindex(traj::Trajectory) = lastindex(traj.sol.u)
+Base.lastindex(traj::Trajectory, idx) = lastindex(traj.sol.u, idx)
+Base.size(traj::Trajectory) = size(traj.sol.u)
 
 function Base.getproperty(x::T, b::Symbol) where {T<:Union{State,Trajectory}}
     if hasfield(T, b)
