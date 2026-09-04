@@ -5,7 +5,7 @@
 function corrector_solve end
 function corrector_callback end
 
-function DiffEqBase.__solve(state::State, corrector::Abstract_DifferentialCorrector;
+function SciMLBase.__solve(state::State, corrector::Abstract_DifferentialCorrector;
                             dc_maxiters=10, dc_tolerance=1e-6, dc_xtol=dc_tolerance^2,
                             dc_method=:newton, dc_linesearch=LineSearches.BackTracking(),
                             verbose=false, kwargs...)

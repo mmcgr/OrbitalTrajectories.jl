@@ -27,7 +27,7 @@ function State(model::Abstract_DynamicalModel, reference_frame::Abstract_Referen
 end
 State(model::Abstract_DynamicalModel, u0::AbstractArray, tspan) = State(model, default_reference_frame(model), u0, tspan)
 
-struct Trajectory{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,T,N,A,O<:DiffEqBase.AbstractTimeseriesSolution{T,N,A},} <: DiffEqBase.AbstractTimeseriesSolution{T,N,A}
+struct Trajectory{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,T,N,A,O<:SciMLBase.AbstractTimeseriesSolution{T,N,A},} <: SciMLBase.AbstractTimeseriesSolution{T,N,A}
     model :: M
     frame :: F  # Reference frame that the solution is defined in
     sol :: O
@@ -67,15 +67,15 @@ Base.lastindex(traj::Trajectory) = lastindex(traj.sol.u)
 Base.lastindex(traj::Trajectory, idx) = lastindex(traj.sol.u, idx)
 Base.size(traj::Trajectory) = size(traj.sol.u)
 
-function Base.getproperty(x::T, b::Symbol) where {T<:State}
-    if hasfield(T, b)
+function Base.getproperty(x::State, b::Symbol)
+    if hasfield(State, b)
         return getfield(x, b)
     end
     return getproperty(x.prob, b)
 end
 
-function Base.getproperty(x::T, b::Symbol) where {T<:Trajectory}
-    if hasfield(T, b)
+function Base.getproperty(x::Trajectory, b::Symbol)
+    if hasfield(Trajectory, b)
         return getfield(x, b)
     end
     return getproperty(x.sol, b)
@@ -93,7 +93,7 @@ Base.summary(state::State) = string(
     "    ", SciMLBase.NO_COLOR, "Underlying ", summary(state.prob), "\n",
     "    ", SciMLBase.NO_COLOR, "tspan = ", state.prob.tspan, "\n",
     "    u0    = ", state.prob.u0)
-Base.show(io::IO, m::MIME"text/plain", A::Trajectory) = show(io, A) # XXX: Required because also defined in DiffEqBase
+Base.show(io::IO, _::MIME"text/plain", A::Trajectory) = show(io, A) # XXX: Required because also defined in SciMLBase
 function Base.show(io::IO, A::Trajectory)
     println(io, string(
         SciMLBase.TYPE_COLOR, nameof(typeof(A)), SciMLBase.NO_COLOR, " in ",
@@ -114,19 +114,19 @@ end
 const DEFAULT_ALG = Vern7();
 
 # XXX: Required to support solving a State problem.
-DiffEqBase.solve(state::State, args...; reltol=1e-10, abstol=1e-10, kwargs...) =
-    DiffEqBase.__solve(state, args...; reltol, abstol, kwargs...)
+SciMLBase.solve(state::State, args...; reltol=1e-10, abstol=1e-10, kwargs...) =
+    SciMLBase.__solve(state, args...; reltol, abstol, kwargs...)
 
-DiffEqBase.__solve(state::State; kwargs...) = DiffEqBase.__solve(state, DEFAULT_ALG; kwargs...)
+SciMLBase.__solve(state::State; kwargs...) = SciMLBase.__solve(state, DEFAULT_ALG; kwargs...)
 
 # The __solve() method does the actual heavy lifting, including converting to a Trajectory.
-function DiffEqBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata=Dict(), callback=nothing, kwargs...)
+function SciMLBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata=Dict(), callback=nothing, kwargs...)
     default_frame = default_reference_frame(state.model)
     real_state = convert_to_frame(state, default_frame)
 
     # Pass the default state into the underlying solver
     # TODO: Remove the need for this in DiffCorrectAxisymmetric
-    # TODO: Removed to avoid deprecation warning in DiffEqBase.solve()
+    # TODO: Removed to avoid deprecation warning in SciMLBase.solve()
     #  - buuut presumably DiffCorrectAxisymmetric is now sad
     # userdata = deepcopy(userdata)
     # userdata[:real_state] = real_state
@@ -135,6 +135,6 @@ function DiffEqBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata
     callback = deepcopy(callback)
 
     # Call the underlying solver
-    raw_sol = solve(real_state.prob, alg; callback, kwargs...)
+    raw_sol = SciMLBase.solve(real_state.prob, alg; callback, kwargs...)
     return Trajectory(state.model, default_frame, raw_sol)
 end

@@ -50,7 +50,8 @@ function sensitivity_trace(::Val{:ForwardDiff}, state::State, desired_frame=stat
 
     # Solve and convert to the desired frame
     sol = solve(state_AD, alg; kwargs...)
-    return convert_to_frame(sol, desired_frame)
+    new_sol = convert_to_frame(sol, desired_frame)
+    return new_sol
 end
 @traitfn function sensitivity_trace(::Val{:VariationalEquations}, state::S, desired_frame=state.frame, alg=DEFAULT_ALG; kwargs...) where {S; HasVE{S}}
     dim = length(state.u0)

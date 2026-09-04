@@ -33,7 +33,7 @@ end
 
 @traitdef HasJacobian{X}
 @traitimpl HasJacobian{X} <- has_jacobian(X)
-has_jacobian(X::Type{<:DiffEqBase.ODEFunction}) = !isnothing(fieldtype(X, :jac))
+has_jacobian(X::Type{<:SciMLBase.ODEFunction}) = !isnothing(fieldtype(X, :jac))
 
 @doc """
     Function to generate an ODE Function that computes the State Transition
@@ -79,8 +79,8 @@ end
 Base.show(io::IO, x::Abstract_DynamicalModel) = show(io, typeof(x))
 Base.show(io::IO, x::Type{<:Abstract_DynamicalModel}) = print(io, nameof(x))
 ModelingToolkit.varmap_to_vars(model::Abstract_DynamicalModel, varmap) = ModelingToolkit.varmap_to_vars(varmap, parameters(model))
-DiffEqBase.isinplace(f::Abstract_DynamicalModel) = true
-DiffEqBase.isinplace(f::Abstract_DynamicalModel, _) = isinplace(f)
+SciMLBase.isinplace(f::Abstract_DynamicalModel) = true
+SciMLBase.isinplace(f::Abstract_DynamicalModel, _) = isinplace(f)
 
 # XXX: Need these due to new ModelingToolkit interface.
 function Base.getproperty(sys::Abstract_ModelODEFunctions, name::Symbol)
