@@ -54,6 +54,6 @@ function collision(system::Abstract_DynamicalModel, body, dist=bodvrd(String(bod
         check_distance(u, t, system, body, diam)
     end
 end
-check_distance(u, t, system::Abstract_DynamicalModel, body) = error("check_distance not defined for $(nameof(typeof(system)))")
+check_distance(_, _, system::Abstract_DynamicalModel, _, _=nothing) = error("check_distance not defined for $(nameof(typeof(system)))")
 crashed(sol::Trajectory) = crashed(sol.sol)
 crashed(sol::ODESolution) = sol.retcode == CRASHED_RETCODE
