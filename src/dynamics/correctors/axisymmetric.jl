@@ -59,7 +59,7 @@ function corrector_callback(::Abstract_AxisymmetricCorrector, system::EphemerisN
             if idx == 3 # Crossing!
                 terminate_after_N_crossings!(integrator)
             else
-                terminate!(integrator, :Crashed)
+                terminate!(integrator, CRASHED_RETCODE)
             end
         end, 3;
         interp_points, save_positions=(false, false)) do du, u, t, integrator
