@@ -162,8 +162,8 @@ end
 
         primary_pos = (-circ_props.μ, 0., 0.)
         ellipse_by_axis(primary_pos[idxs[1]], primary_pos[idxs[2]];
-                        a = circ_props.R1[idxs[1]] / circ_props.L,
-                        b = circ_props.R1[idxs[2]] / circ_props.L)
+                        a = ustrip(circ_props.R1[idxs[1]] / circ_props.L),
+                        b = ustrip(circ_props.R1[idxs[2]] / circ_props.L))
     end
 
     @series begin
@@ -176,8 +176,8 @@ end
 
         secondary_pos = (1 - circ_props.μ, 0., 0.)
         ellipse_by_axis(secondary_pos[idxs[1]], secondary_pos[idxs[2]];
-                        a = circ_props.R2[idxs[1]] / circ_props.L,
-                        b = circ_props.R2[idxs[2]] / circ_props.L)
+                        a = ustrip(circ_props.R2[idxs[1]] / circ_props.L),
+                        b = ustrip(circ_props.R2[idxs[2]] / circ_props.L))
     end
 
     @series begin

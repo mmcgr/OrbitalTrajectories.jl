@@ -8,7 +8,6 @@ using ForwardDiff
 # Avoid Plots compatibility issue with Quantify
 Base.occursin(s::Any, q::Quantity) = occursin(s, repr(q))
 Base.pointer(q::Quantity) = pointer(repr(q))
-Base.zero(::Type{Quantity{F, D}}) where {F, D} = Quantity{F, D}(0.0)
 
 # Ensure that ForwardDiff values can get sent to C calls
 Base.unsafe_convert(T::Type{<:Any}, x::ForwardDiff.Dual) = T(ForwardDiff.value.(x))
