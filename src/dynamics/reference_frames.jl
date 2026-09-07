@@ -32,7 +32,7 @@ function convert_to_frame(traj::Trajectory, frame::Abstract_ReferenceFrame)
         return u
     end
 
-    new_sol = DiffEqBase.build_solution(prob0, traj.alg, times, u1; interp=interp_and_convert, retcode=traj.retcode)
+    new_sol = SciMLBase.build_solution(prob0, traj.alg, times, u1; interp=interp_and_convert, retcode=traj.retcode)
 
     return Trajectory(traj.model, frame, new_sol)
 end
