@@ -36,11 +36,11 @@ function ModelingToolkitBase.System(::Type{_BC4BP_ODEFunctions}; name = :BC4BP)
 
     # Add up the equations [DeiTos2018 Eq. 21]
     forces = sum([coeff .* (v / norm(v)^3) for (coeff, v) in vectors])
-    eqs    = [
+    eqs = expand_derivatives.([
         D2(x) ~ +2D(y) + x + forces[1],
         D2(y) ~ -2D(x) + y + forces[2],
         D2(z) ~ forces[3],
-    ]
+    ])
 
     # Simplify and return the system
     return System(simplify(eqs), t, [x, y, z], [μ, μ2, a3, α0, a3, ω3]; name)

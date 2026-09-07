@@ -33,19 +33,19 @@ function ModelingToolkitBase.System(::Type{T}; name=:ER3BP) where {T<:_ER3BP_ODE
     # Expanded derivatives
     # ==========================================
     ω = elliptical_potential(μ, (x, y, z), f, e)
-    eqs = [
-        # D2(x) ~ +2D(y),
-        D2(x) ~ +2D(y) + expand_derivatives(Dx(ω)),
-        D2(y) ~ -2D(x) + expand_derivatives(Dy(ω)),
-        D2(z) ~        + expand_derivatives(Dz(ω))
-    ]
+    eqs = expand_derivatives.([
+        D2(x) ~ +2D(y) + Dx(ω),
+        D2(y) ~ -2D(x) + Dy(ω),
+        D2(z) ~        + Dz(ω)
+    ])
     # ------------------------------------------
-    return System(eqs,
+    system = System(eqs,
         f,
         [x, y, z],
         [μ, e];
-        name,
+        name ,
     )
+    return system
 end
 
 @doc "Centrifugal potential [DeiTos2017, Eq.13; Ichinomiya 2018, Eq. 2.2]"
