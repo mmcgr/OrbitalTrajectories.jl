@@ -10,7 +10,7 @@ struct _CR3BP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
     ode_stm_f  :: F2
 end
 
-function ModelingToolkitBase.System(::Type{_CR3BP_ODEFunctions}; name = :_CR3BP_ODEFunctions)
+function ModelingToolkitBase.System(::Type{_CR3BP_ODEFunctions}; name=:CR3BP)
     # Build from the ER3BP equations (with eccentricity = 0 for circular)
     eqs_er3bp = System(_ER3BP_ODEFunctions)
     (μ, e) = parameters(eqs_er3bp)

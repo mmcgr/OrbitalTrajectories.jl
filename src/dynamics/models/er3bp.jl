@@ -10,7 +10,7 @@ struct _ER3BP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
     ode_stm_f  :: F2
 end
 
-function ModelingToolkitBase.System(::Type{_ER3BP_ODEFunctions}; name = :_ER3BP_ODEFunctions)
+function ModelingToolkitBase.System(::Type{T}; name=:ER3BP) where {T<:_ER3BP_ODEFunctions}
     @parameters  μ  # Mass fraction
     @parameters  e  # Eccentricity
     @independent_variables  f  # True anomaly

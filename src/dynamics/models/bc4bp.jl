@@ -9,7 +9,7 @@ struct _BC4BP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
     ode_stm_f  :: F2
 end
 
-function ModelingToolkitBase.System(::Type{_BC4BP_ODEFunctions}; name = :_BC4BP_ODEFunctions)
+function ModelingToolkitBase.System(::Type{_BC4BP_ODEFunctions}; name = :BC4BP)
     @parameters  μ   # Mass fraction (smaller 2 bodies)
     @parameters  μ2  # Mass fraction (note: inverse, as per [DeiTos2018])
     @parameters  a3  # Distance to 3rd body

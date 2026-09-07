@@ -34,8 +34,8 @@ struct _NBP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
     ode_stm_f  :: F2
 end
 
-# XXX: Need the "T" in place for @memoize to work
-@memoize function ModelingToolkitBase.System(T::Type{_NBP_ODEFunctions}, props::NBPSystemProperties; name = :_NBP_ODEFunctions)
+# NB: Need the parameter name "T" in place for @memoize to work
+@memoize function ModelingToolkitBase.System(T::Type{_NBP_ODEFunctions}, props::NBPSystemProperties; name = :EphemerisNBP)
     @parameters t  # Time in J2000 epoch
     @variables x(t) y(t) z(t)
     D2 = Differential(t)^2

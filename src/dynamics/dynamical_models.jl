@@ -79,7 +79,7 @@ end
 Base.show(io::IO, x::Abstract_DynamicalModel) = show(io, typeof(x))
 Base.show(io::IO, x::Type{<:Abstract_DynamicalModel}) = print(io, nameof(x))
 ModelingToolkit.varmap_to_vars(model::Abstract_DynamicalModel, varmap) = ModelingToolkit.varmap_to_vars(varmap, parameters(model))
-SciMLBase.isinplace(f::Abstract_DynamicalModel) = true
+SciMLBase.isinplace(::Abstract_DynamicalModel) = true
 SciMLBase.isinplace(f::Abstract_DynamicalModel, _) = isinplace(f)
 
 # XXX: Need these due to new ModelingToolkit interface.

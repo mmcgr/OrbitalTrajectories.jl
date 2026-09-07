@@ -18,7 +18,7 @@ default_synodic_reference_frame(::Abstract_DynamicalModel) = SynodicFrame()
 convert_to_frame(state::State, frame::Abstract_ReferenceFrame) = error("Cannot convert $(nameof(typeof(state))){$(state.model),$(state.frame)} to $(frame).")
 convert_to_frame(state::State{<:Abstract_DynamicalModel,T}, ::T) where {T<:Abstract_ReferenceFrame} = state
 convert_to_frame(traj::Trajectory{<:Abstract_DynamicalModel,T}, ::T) where {T<:Abstract_ReferenceFrame} = traj
-function convert_to_frame(traj::Trajectory, frame::Abstract_ReferenceFrame)
+function convert_to_frame(traj::Trajectory, frame::F) where {F<:Abstract_ReferenceFrame}
     prob0 = traj.prob
     times = traj.t
 

@@ -93,17 +93,18 @@ module SpiceUtils
         return true
     end
 
-    @doc "Get a target body position from SPICE kernels."
     # function get_pos(t::Float64, target::Symbol, reference::Symbol; relative="ECLIPJ2000")
     #     res = spkpos(target, t, relative, "none", reference)[1]
     #     return res
     # end
+    # get_pos(t::Num, tgt::Symbol, ref::Symbol) = get_pos(t, tgt, ref)
+
+    @doc "Get a target body position from SPICE kernels."
     function get_pos(t, target::Symbol, reference::Symbol; relative="ECLIPJ2000")
-        res = Tuple{Float64, Float64, Float64}(spkpos(target, t, relative, "none", reference)[1])
+        res = SVector{3, Float64}(spkpos(target, t, relative, "none", reference)[1])
         return res
     end
     get_pos(t::ForwardDiff.Dual, target::Symbol, reference::Symbol; kwargs...) = get_pos(ForwardDiff.value(t), target, reference; kwargs...)
-#    get_pos(t::Num, tgt::Symbol, ref::Symbol) = get_pos(t, tgt, ref)
     get_pos(t, target::String, reference::String; kwargs...) = get_pos(t, Symbol(target), Symbol(reference); kwargs...)
     @register_array_symbolic get_pos(t, target::String, reference::String) begin
         size=(3,)
