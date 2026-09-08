@@ -20,11 +20,8 @@ struct State{
 end
 State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::AbstractArray, tspan) =
     State(model, reference_frame, MArray{Tuple{size(u0)...}}(u0), tspan)
-function State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::StaticArray, tspan)
-    problem = SciMLBase.ODEProblem(model, u0, tspan, parameters(model))
-    state = State(model, reference_frame, problem)
-    return state
-end
+State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::StaticArray, tspan) =
+    State(model, reference_frame, ODEProblem(model, u0, tspan, parameters(model)))
 State(model::Abstract_DynamicalModel, u0::AbstractArray, tspan) = State(model, default_reference_frame(model), u0, tspan)
 
 struct Trajectory{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,T,N,A,O<:SciMLBase.AbstractTimeseriesSolution{T,N,A},} <: SciMLBase.AbstractTimeseriesSolution{T,N,A}
@@ -56,16 +53,16 @@ end
 
 # Indexing
 Base.getindex(state::State, idx...) = getindex(state.prob.u0, idx...)
-Base.getindex(traj::Trajectory, idx...) = State(traj.model, traj.frame, getindex(traj.sol.u, idx...), (traj.sol.t[idx...], traj.sol.t[idx...]))
+Base.getindex(traj::Trajectory, idx...) = State(traj.model, traj.frame, getindex(traj.sol, idx...), (traj.sol.t[idx...], traj.sol.t[idx...]))
 Base.getindex(traj::Trajectory, idx::Int) = State(traj.model, traj.frame, getindex(traj.sol.u, idx), (traj.sol.t[idx], traj.sol.t[idx]))
-Base.getindex(traj::Trajectory, idx::AbstractArray{Int}) = State(traj.model, traj.frame, getindex(traj.sol.u, idx), (traj.sol.t[idx], traj.sol.t[idx]))
+Base.getindex(traj::Trajectory, idx::AbstractArray{Int}) = State(traj.model, traj.frame, getindex(traj.sol, idx), (traj.sol.t[idx], traj.sol.t[idx]))
 Base.axes(state::State, idx...) = axes(state.prob, idx...)
-Base.axes(traj::Trajectory, idx...) = axes(traj.sol.u, idx...)
+Base.axes(traj::Trajectory, idx...) = axes(traj.sol, idx...)
 Base.firstindex(traj::Trajectory) = firstindex(traj.sol.u)
-Base.firstindex(traj::Trajectory, idx) = firstindex(traj.sol.u, idx)
+Base.firstindex(traj::Trajectory, idx) = firstindex(traj.sol, idx)
 Base.lastindex(traj::Trajectory) = lastindex(traj.sol.u)
-Base.lastindex(traj::Trajectory, idx) = lastindex(traj.sol.u, idx)
-Base.size(traj::Trajectory) = size(traj.sol.u)
+Base.lastindex(traj::Trajectory, idx) = lastindex(traj.sol, idx)
+Base.size(traj::Trajectory) = size(traj.sol)
 
 function Base.getproperty(x::State, b::Symbol)
     if hasfield(State, b)
@@ -135,6 +132,6 @@ function SciMLBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata=
     callback = deepcopy(callback)
 
     # Call the underlying solver
-    raw_sol = SciMLBase.solve(real_state.prob, alg; callback, kwargs...)
+    raw_sol = solve(real_state.prob, alg; callback, kwargs...)
     return Trajectory(state.model, default_frame, raw_sol)
 end
