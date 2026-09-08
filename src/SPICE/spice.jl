@@ -82,7 +82,7 @@ module SpiceUtils
         end
 
         # Load each kernel into SPICE.
-        for (kernel, url) in zip(kernel_names, download_URLs)
+        for kernel in kernel_names
             kernel_path = joinpath(kernel_dir, kernel)
             if !isfile(kernel_path)
                 error("Could not find kernel file '$(kernel)'. Delete the $(kernel_dir) directory and try again.")
