@@ -151,7 +151,7 @@ secondary_body(m::Abstract_R3BPModel) = m.props.b2
 function collision(system::Abstract_R3BPModel, body, dist=bodvrd(String(body), "RADII")[1]; radii=1.)
     circ_props = R3BPSystemProperties(primary_body(system), secondary_body(system))
     diam = (radii * dist) ./ ustrip(u"km", circ_props.L)
-    return ContinuousCallback((integrator) -> terminate!(integrator, :Crashed); interp_points=10) do u, t, integrator
+    return ContinuousCallback((integrator) -> terminate!(integrator, CRASHED_RETCODE); interp_points=10) do u, t, integrator
         check_distance(u, t, system, body, diam)
     end
 end

@@ -47,7 +47,7 @@ function convert_u!(u, t, traj, frame)
     u .= new_state.prob.u0
 end
 
-const CRASHED_RETCODE = :Crashed
+const CRASHED_RETCODE = SciMLBase.ReturnCode.Terminated
 function collision(system::Abstract_DynamicalModel, body, dist=bodvrd(String(body), "RADII")[1]; radii=1., interp_points=10)
     diam = radii * dist
     ContinuousCallback((integrator) -> terminate!(integrator, CRASHED_RETCODE); interp_points) do u, t, integrator
