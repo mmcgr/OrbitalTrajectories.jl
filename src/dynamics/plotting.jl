@@ -86,7 +86,7 @@ end
         end
 
         # Plot the trajectory
-        vars --> (1, 2)  # (x, y)
+        idxs --> (1, 2)  # (x, y)
         denseplot --> get(plotattributes, :denseplot, true)
 
         xlim, ylim = get_margin_lims(sol, plotattributes)
@@ -135,8 +135,8 @@ end
             tspan_norm, max_eigenvalues
         end
     else
-        vars = get(plotattributes, :vars, (1,2))
-        ([[u[v].value for u in u_vals] for v in vars]...,)
+        idxs = get(plotattributes, :idxs, (1,2))
+        ([[u[v].value for u in u_vals] for v in idxs]...,)
     end
 end
 
@@ -150,7 +150,7 @@ end
     plot_libration = get(plotattributes, :libration_points, true)
     circ_props = R3BPSystemProperties(primary_body(model), secondary_body(model))
 
-    vars = get(plotattributes, :vars, (1,2))
+    idxs = get(plotattributes, :idxs, (1,2))
 
     @series begin
         seriestype := :shape
@@ -161,9 +161,9 @@ end
         line_z := nothing
 
         primary_pos = (-circ_props.μ, 0., 0.)
-        ellipse_by_axis(primary_pos[vars[1]], primary_pos[vars[2]];
-                        a = circ_props.R1[vars[1]] / circ_props.L,
-                        b = circ_props.R1[vars[2]] / circ_props.L)
+        ellipse_by_axis(primary_pos[idxs[1]], primary_pos[idxs[2]];
+                        a = circ_props.R1[idxs[1]] / circ_props.L,
+                        b = circ_props.R1[idxs[2]] / circ_props.L)
     end
 
     @series begin
@@ -175,9 +175,9 @@ end
         line_z := nothing
 
         secondary_pos = (1 - circ_props.μ, 0., 0.)
-        ellipse_by_axis(secondary_pos[vars[1]], secondary_pos[vars[2]];
-                        a = circ_props.R2[vars[1]] / circ_props.L,
-                        b = circ_props.R2[vars[2]] / circ_props.L)
+        ellipse_by_axis(secondary_pos[idxs[1]], secondary_pos[idxs[2]];
+                        a = circ_props.R2[idxs[1]] / circ_props.L,
+                        b = circ_props.R2[idxs[2]] / circ_props.L)
     end
 
     @series begin
@@ -198,7 +198,7 @@ end
             linewidth := 0.75
             label := nolabels ? "" : "Origin of $(titlecase(String(secondary_body(model))))"
             line_z := nothing
-            if vars[1] == 1
+            if idxs[1] == 1
                 [1 - circ_props.μ]
             else
                 [0.]
@@ -218,7 +218,7 @@ end
             markersize := 3
             label := nolabels ? "" : "Libration points"
             line_z := nothing
-            [l[vars[1]] for l in L], [l[vars[2]] for l in L]
+            [l[idxs[1]] for l in L], [l[idxs[2]] for l in L]
         else
             [], []
         end
@@ -244,7 +244,7 @@ end
 
 function get_margin_lims(sol::Trajectory, plotattributes)
     margins = get(plotattributes, :padding, 0.10)
-    a, b = get(plotattributes, :vars, (1, 2))
+    a, b = get(plotattributes, :idxs, (1, 2))
 
     # Work out the maximum extent of the orbit
     x, y = (ForwardDiff.value.(sol.sol[a,:]), ForwardDiff.value.(sol.sol[b,:]))
