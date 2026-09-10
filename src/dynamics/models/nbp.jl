@@ -68,9 +68,9 @@ end
 
     # Equations of motion: sum of all accelerations
     eqs = expand_derivatives.([
-        D2(x) ~ accelerations[1],
-        D2(y) ~ accelerations[2],
-        D2(z) ~ accelerations[3],
+        D2(x) ~ sum(accelerations),
+        D2(y) ~ sum(accelerations),
+        D2(z) ~ sum(accelerations),
     ])
     # Build the 2nd-order ODE props
     return System(eqs, t, pos, []; name)
