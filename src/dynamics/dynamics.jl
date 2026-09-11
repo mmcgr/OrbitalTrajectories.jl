@@ -18,7 +18,6 @@ module Dynamics
     using SimpleTraits
     using StaticArrays
     using ProgressMeter
-    using RecipesBase
     using PhysicalConstants.CODATA2014: NewtonianConstantOfGravitation
 
     # Required to ensure that we can precompile ODEFunctions (which needs to be
