@@ -103,7 +103,7 @@ ModelingToolkit.parameters(model::Abstract_R3BPModel) = [getfield(model.props, i
     # Solve for gradient(libration point guess) == 0 using forward AD
     libration_points = nlsolve.(
         (pos) -> ForwardDiff.gradient(p -> centrifugal_potential(μ, p), pos), 
-        L_guess, autodiff=:forward)
+        L_guess, autodiff=AutoForwardDiff())
 
     # Return the zero solution (i.e. the position) for each libration point
     map(l -> l.zero, libration_points)
