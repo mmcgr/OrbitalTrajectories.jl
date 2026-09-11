@@ -6,7 +6,7 @@ export DiffCorrectAxisymmetric
 
 abstract type Abstract_AxisymmetricCorrector <: Abstract_DifferentialCorrector end
 
-struct DiffCorrectAxisymmetric{D<:DiffEqBase.DEAlgorithm,F<:Abstract_ReferenceFrame} <: Abstract_AxisymmetricCorrector
+struct DiffCorrectAxisymmetric{D<:SciMLBase.DEAlgorithm,F<:Abstract_ReferenceFrame} <: Abstract_AxisymmetricCorrector
     u0_free :: SVector{2,Integer}  # Indices of the free variables in the initial condition
     u1_free :: SVector{3,Integer}  # Indices of the free variables in the final condition
     alg :: D

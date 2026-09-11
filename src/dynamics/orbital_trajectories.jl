@@ -17,7 +17,7 @@ State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, 
     State(model, reference_frame, ODEProblem(model, u0, tspan, parameters(model)))
 State(model::Abstract_DynamicalModel, u0::AbstractArray, tspan) = State(model, default_reference_frame(model), u0, tspan)
 
-struct Trajectory{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,T,N,A,O<:DiffEqBase.AbstractTimeseriesSolution{T,N,A},} <: DiffEqBase.AbstractTimeseriesSolution{T,N,A}
+struct Trajectory{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,T,N,A,O<:SciMLBase.AbstractTimeseriesSolution{T,N,A},} <: SciMLBase.AbstractTimeseriesSolution{T,N,A}
     model :: M
     frame :: F  # Reference frame that the solution is defined in
     sol :: O
@@ -30,7 +30,7 @@ primary_body(traj::Trajectory) = primary_body(traj.model)
 secondary_body(state::State) = secondary_body(state.model)
 secondary_body(traj::Trajectory) = secondary_body(traj.model)
 
-DiffEqBase.remake(state::State; kwargs...) = State(state.model, state.frame, remake(state.prob; kwargs...))
+SciMLBase.remake(state::State; kwargs...) = State(state.model, state.frame, remake(state.prob; kwargs...))
 ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.model)
 
 #---------------#
@@ -40,7 +40,7 @@ ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.mode
 # Interpolation
 (traj::Trajectory)(t::Number) = State(traj.model, traj.frame, traj.sol(t), (t, t))
 function (traj::Trajectory)(t::AbstractArray{<:Number})
-    new_sol = DiffEqBase.build_solution(traj.prob, traj.alg, t, traj.sol(t); interp=traj.interp, retcode=traj.retcode)
+    new_sol = SciMLBase.build_solution(traj.prob, traj.alg, t, traj.sol(t); interp=traj.interp, retcode=traj.retcode)
     return Trajectory(traj.model, traj.frame, new_sol)
 end
 
@@ -77,7 +77,7 @@ Base.summary(state::State) = string(
     "    ", SciMLBase.NO_COLOR, "Underlying ", summary(state.prob), "\n",
     "    ", SciMLBase.NO_COLOR, "tspan = ", state.prob.tspan, "\n",
     "    u0    = ", state.prob.u0)
-Base.show(io::IO, m::MIME"text/plain", A::Trajectory) = show(io, A) # XXX: Required because also defined in DiffEqBase
+Base.show(io::IO, m::MIME"text/plain", A::Trajectory) = show(io, A) # XXX: Required because also defined in SciMLBase
 function Base.show(io::IO, A::Trajectory)
     println(io, string(
         SciMLBase.TYPE_COLOR, nameof(typeof(A)), SciMLBase.NO_COLOR, " in ",
@@ -98,13 +98,13 @@ end
 const DEFAULT_ALG = Vern7();
 
 # XXX: Required to support solving a State problem.
-DiffEqBase.solve(state::State, args...; reltol=1e-10, abstol=1e-10, kwargs...) =
-    DiffEqBase.__solve(state, args...; reltol, abstol, kwargs...)
+SciMLBase.solve(state::State, args...; reltol=1e-10, abstol=1e-10, kwargs...) =
+    SciMLBase.__solve(state, args...; reltol, abstol, kwargs...)
 
-DiffEqBase.__solve(state::State; kwargs...) = DiffEqBase.__solve(state, DEFAULT_ALG; kwargs...)
+SciMLBase.__solve(state::State; kwargs...) = SciMLBase.__solve(state, DEFAULT_ALG; kwargs...)
 
 # The __solve() method does the actual heavy lifting, including converting to a Trajectory.
-function DiffEqBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata=Dict(), callback=nothing, kwargs...)
+function SciMLBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata=Dict(), callback=nothing, kwargs...)
     default_frame = default_reference_frame(state.model)
     real_state = convert_to_frame(state, default_frame)
 

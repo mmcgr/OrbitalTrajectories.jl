@@ -5,7 +5,7 @@ module Dynamics
     using Plots
     using Unitful
     using DifferentialEquations
-    using DiffEqBase
+    using SciMLBase
     using DiffEqSensitivity
     using SciMLBase
     using LinearAlgebra
