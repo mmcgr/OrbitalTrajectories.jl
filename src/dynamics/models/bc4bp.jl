@@ -9,7 +9,7 @@ struct _BC4BP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
     ode_stm_f  :: F2
 end
 
-function ModelingToolkit.ODESystem(::Type{_BC4BP_ODEFunctions})
+function ModelingToolkit.ODESystem(::Type{_BC4BP_ODEFunctions}; name = :BC4BP)
     @parameters  μ   # Mass fraction (smaller 2 bodies)
     @parameters  μ2  # Mass fraction (note: inverse, as per [DeiTos2018])
     @parameters  a3  # Distance to 3rd body
@@ -39,7 +39,7 @@ function ModelingToolkit.ODESystem(::Type{_BC4BP_ODEFunctions})
     eqs    = @. D2(p) ~ [+2D(y) + x, -2D(x) + y, 0] + forces
 
     # Simplify and return the system
-    return ODESystem(simplify.(eqs), t, [x, y, z], [μ, μ2, a3, α0, a3, ω3])
+    return ODESystem(simplify.(eqs), t, [x, y, z], [μ, μ2, a3, α0, a3, ω3]; name)
 end
 
 # Build the equations at pre-compile time

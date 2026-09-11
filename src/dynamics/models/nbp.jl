@@ -35,7 +35,7 @@ struct _NBP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
 end
 
 # XXX: Need the "T" in place for @memoize to work
-@memoize function ModelingToolkit.ODESystem(T::Type{_NBP_ODEFunctions}, props::NBPSystemProperties)
+@memoize function ModelingToolkit.ODESystem(T::Type{_NBP_ODEFunctions}, props::NBPSystemProperties; name = :EphemerisNBP)
     @parameters t  # Time in J2000 epoch
     @variables x(t) y(t) z(t)
     D2 = Differential(t)^2
@@ -70,7 +70,7 @@ end
     eqs = @. D2(pos) ~ sum(accelerations)
 
     # Build the 2nd-order ODE props
-    return ODESystem(eqs, t, pos, [])
+    return ODESystem(eqs, t, pos, []; name)
 end
 
 #---------------------#

@@ -13,7 +13,7 @@ function (T::Type{<:Abstract_ModelODEFunctions})(args...; kwargs...)
     eqs, dvs = ode_order_lowering(eqs, independent_variable(_ode), ModelingToolkit.states(_ode)) 
     eqs = [eqs[end - num_orig_eqs + 1:end]..., eqs[1:num_orig_eqs]...]
     dvs = [dvs[end - num_orig_eqs + 1:end]..., dvs[1:num_orig_eqs]...]
-    ode = ODESystem(simplify.(eqs), independent_variable(_ode), dvs, parameters(_ode))
+    ode = ODESystem(simplify.(eqs), independent_variable(_ode), dvs, parameters(_ode); name=_ode.name)
 
     # Generate the functions
     # TODO: Add support for tgrad (need to define derivative(get_pos) for EphemerisNBP)
@@ -54,14 +54,15 @@ has_jacobian(X::Type{<:SciMLBase.ODEFunction}) = !isnothing(fieldtype(X, :jac))
     # The State Transition Matrix (STM) ODE function is defined as follows, including the N^2 Jacobian equations +
     # the N first-order equations of motion. [Koon 2011]
     # NOTE: the Differential is defined element-wise and flattened to a list.
-    stm_eqs = simplify.(D.(ϕ) .~ A * ϕ)
+    stm_eqs = collect(simplify.(D.(ϕ) .~ A * ϕ))
 
     # Create the ODE system and generate its functions
     stm_ode = ODESystem(
         [equations(ode)..., stm_eqs...], # Append the ODE equations.
         iv,
         [dvs..., ϕ...],  # Append the STM and motion state variables
-        params)
+        params;
+        name = :stm_ode)
     stm_f = ODEFunction(stm_ode; sparse=true, eval_expression=false, eval_module=@__MODULE__, kwargs...)
 end
 
