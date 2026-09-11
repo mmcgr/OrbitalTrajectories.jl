@@ -44,12 +44,13 @@ function terminate_after_N_crossings!(integrator)
         N = get!(integrator.opts.userdata, :crossings, 1)
         integrator.opts.userdata[:crossings] = N - 1
         if integrator.opts.userdata[:crossings] == 0
-            terminate!(integrator, :NCrossings)
+            # TODO: Does this retcode match our needs?
+            terminate!(integrator, SciMLBase.ReturnCode.Terminated)
         end
     end
 end
 
-crossed(sol::Trajectory) = sol.retcode == :NCrossings
+crossed(sol::Trajectory) = sol.retcode == SciMLBase.ReturnCode.Terminated
 
 function corrector_callback(::Abstract_AxisymmetricCorrector, system::EphemerisNBP; interp_points=10)
     # TODO: Play with interp_points, interp_points=0 halves runtime/memory, but might cause issues due to oscillation around y-axis
