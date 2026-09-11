@@ -1,7 +1,6 @@
 module SpiceUtils
 
     using Downloads
-    using Dates
     using SPICE
     using ModelingToolkit
     using ProgressMeter
