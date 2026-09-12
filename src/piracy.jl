@@ -1,7 +1,7 @@
-using ModelingToolkit
-using DynamicQuantities
+using Symbolics: Num
+using DynamicQuantities: Quantity
 using LinearAlgebra
-using ForwardDiff
+using ForwardDiff: ForwardDiff, Dual
 
 # TODO: Check which of these are still in use and/or necessary.
 
@@ -10,7 +10,7 @@ Base.occursin(s::Any, q::Quantity) = occursin(s, repr(q))
 Base.pointer(q::Quantity) = pointer(repr(q))
 
 # Ensure that ForwardDiff values can get sent to C calls
-Base.unsafe_convert(T::Type{<:Any}, x::ForwardDiff.Dual) = T(ForwardDiff.value.(x))
+Base.unsafe_convert(T::Type{<:Any}, x::Dual) = T(ForwardDiff.value.(x))
 
 # Compute norms for arrays of symbolic variables (as needed by EphemerisNBP)
-LinearAlgebra.norm(a::AbstractArray{<:ModelingToolkit.Num}) = sum(a .^ 2)^(1/2)
+LinearAlgebra.norm(a::AbstractArray{<:Num}) = sum(a .^ 2)^(1/2)
