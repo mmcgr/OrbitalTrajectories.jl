@@ -4,7 +4,7 @@ module SpiceUtils
     using SPICE
     using ModelingToolkit
     using ProgressMeter
-    using Pkg.Artifacts
+    using Artifacts
     using ForwardDiff
     using StaticArrays
     using Symbolics: @register_array_symbolic, symbolic_to_float
