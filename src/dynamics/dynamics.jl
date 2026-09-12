@@ -6,7 +6,7 @@ module Dynamics
     using Unitful
     using DifferentialEquations
     using SciMLBase
-    using DiffEqSensitivity
+    using SciMLSensitivity
     using SciMLBase
     using LinearAlgebra
     using ModelingToolkit

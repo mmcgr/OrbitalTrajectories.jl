@@ -42,7 +42,7 @@ function sensitivity_trace(::Val{:ForwardDiff}, state::State, desired_frame=stat
 
     # Seed the values we want to trace with Dual numbers
     tag = typeof(state.model)
-    duals = DiffEqSensitivity.seed_duals(values, tag)
+    duals = SciMLSensitivity.seed_duals(values, tag)
     u0 = MVector{length(state.u0)}(duals[1:length(state.u0)])
 
     # Remake the state with the seeded values

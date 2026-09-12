@@ -45,7 +45,7 @@ has_jacobian(X::Type{<:SciMLBase.ODEFunction}) = !isnothing(fieldtype(X, :jac))
 
     # NOTE: Depends on the Jacobian, corresponding to A(t) matrix (for the
     # State Transition Matrix) [Parker & Anderson 2014].
-    @variables   ϕ[1:length(dvs),1:length(dvs)](iv)
+    @variables   (ϕ(iv))[1:length(dvs),1:length(dvs)]
     D = Differential(iv)
 
     # Get the Jacobian matrix (A(t))
