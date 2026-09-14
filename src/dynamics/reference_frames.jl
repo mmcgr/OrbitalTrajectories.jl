@@ -27,7 +27,8 @@ function convert_to_frame(traj::Trajectory, frame::F) where {F<:Abstract_Referen
 
     # TODO: Convert this into a type so that we can make an interp_summary(::interpType) dispatch (to print out converted sols)
     function interp_and_convert(times, idxs, deriv::Type{Val{0}}, p, continuity::Symbol=:left)
-        u = deepcopy(traj.interp(times, idxs, deriv, p, continuity))
+        # The interpolation needs to use all indices, even when only two will be displayed
+        u = deepcopy(traj.interp(times, nothing, deriv, p, continuity))
         convert_u!(u.u, times, traj, frame)
         return u
     end
