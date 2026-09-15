@@ -54,7 +54,6 @@ end
 
 @testset "EphemerisNBP STM computation" begin
     u0 = [0.8574053516112442, 0., 0., 0., 0.47, 0.]
-    dim = length(u0)
     system_nbp = EphemerisNBP(:earth, :moon)
     prob = State(system_nbp, SynodicFrame(), u0, (0., 3600.0*24))
 

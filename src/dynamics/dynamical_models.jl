@@ -78,21 +78,37 @@ end
 #---------#
 Base.show(io::IO, x::Abstract_DynamicalModel) = show(io, typeof(x))
 Base.show(io::IO, x::Type{<:Abstract_DynamicalModel}) = print(io, nameof(x))
+Base.show(io::IO, x::Abstract_ModelODEFunctions) = print(io, nameof(x))
 ModelingToolkit.varmap_to_vars(model::Abstract_DynamicalModel, varmap) = ModelingToolkit.varmap_to_vars(varmap, parameters(model))
 SciMLBase.isinplace(::Abstract_DynamicalModel) = true
 SciMLBase.isinplace(f::Abstract_DynamicalModel, _) = isinplace(f)
-
-# XXX: Need these due to new ModelingToolkit interface.
-function Base.getproperty(sys::Abstract_ModelODEFunctions, name::Symbol)
-    # XXX: This is very much needed to avoid the depwarn introduced in
-    # ModelingToolkit, especially in Pkg.test() environments!
-    return getfield(sys, name)
+function Base.getproperty(x::M, b::Symbol) where M<:Abstract_DynamicalModel
+    if hasfield(M, b)
+        return getfield(x, b)
+    end
+    return getproperty(x.ode, b)
 end
+function Base.getproperty(x::F, b::Symbol) where F<:Abstract_ModelODEFunctions
+    if hasfield(F, b)
+        return getfield(x, b)
+    end
+    return getproperty(x.ode_system, b)
+end
+
 ModelingToolkit.get_systems(::Abstract_ModelODEFunctions) = []
 ModelingToolkit.get_eqs(f::Abstract_ModelODEFunctions) = ModelingToolkit.get_eqs(f.ode_system)
 ModelingToolkit.get_unknowns(f::Abstract_ModelODEFunctions) = ModelingToolkit.get_unknowns(f.ode_system)
 ModelingToolkit.get_ps(f::Abstract_ModelODEFunctions) = ModelingToolkit.get_ps(f.ode_system)
 Base.nameof(f::Abstract_ModelODEFunctions) = nameof(typeof(f))
+
+function parameter_map(model::M) where M<:Abstract_DynamicalModel
+    d = Dict{Num, Float64}()
+    for p in parameters(model.ode)
+        s = Symbol(p)
+        d[p] = getproperty(model.props, s)
+    end
+    return d
+end
 
 #----------#
 # INCLUDES #

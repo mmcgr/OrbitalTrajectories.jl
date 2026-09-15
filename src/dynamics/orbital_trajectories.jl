@@ -6,6 +6,25 @@ export collision, check_distance, crashed
 # ORBITAL PROBLEMS #
 #------------------#
 
+# Map from an initial state array in the expected order.
+# u0 is expected to be in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
+function u0_map(model::M, u0::AbstractArray{Float64}) where M<:Abstract_DynamicalModel
+    iv = independent_variable(model.ode.ode_system)
+    D = Differential(iv)
+
+    d = Dict{Num, Float64}()
+    d[model.x] = u0[1]
+    d[model.y] = u0[2]
+    d[model.z] = u0[3]
+    d[D(model.x)] = u0[4]
+    d[D(model.y)] = u0[5]
+    d[D(model.z)] = u0[6]
+
+    merge!(d, parameter_map(model))
+
+    return d
+end
+
 struct State{
     M<:Abstract_DynamicalModel,
     F<:Abstract_ReferenceFrame,
@@ -18,11 +37,16 @@ struct State{
     frame :: F  # Reference frame that the problem's u0 is defined in
     prob :: O
 end
-State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::AbstractArray, tspan) =
-    State(model, reference_frame, MArray{Tuple{size(u0)...}}(u0), tspan)
-State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::StaticArray, tspan) =
-    State(model, reference_frame, ODEProblem(model, u0, tspan, parameters(model)))
+
 State(model::Abstract_DynamicalModel, u0::AbstractArray, tspan) = State(model, default_reference_frame(model), u0, tspan)
+State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::AbstractArray{Float64}, tspan) =
+    State(model, reference_frame, u0_map(model, u0), tspan)
+# Fallback for u0 arrays that are not Float64
+State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::AbstractArray, tspan) =
+    State(model, reference_frame, ODEProblem(model, u0, tspan, parameters(model)))
+# TODO: Convince ODEProblem to work better with DynamicModel + dict.
+State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, d::Dict{Num, Float64}, tspan) =
+    State(model, reference_frame, ODEProblem(model.ode.ode_system, d, tspan))
 
 struct Trajectory{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,T,N,A,O<:SciMLBase.AbstractTimeseriesSolution{T,N,A},} <: SciMLBase.AbstractTimeseriesSolution{T,N,A}
     model :: M

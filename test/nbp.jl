@@ -2,17 +2,18 @@ using OrbitalTrajectories
 
 using Test
 using DifferentialEquations
-using BenchmarkTools
+# using BenchmarkTools
 
 @testset "convert_to_frame" begin
-    u0 = [0.8574053516112442, 0., 0., 0., 0.47, 0.]
+    u0 = [0.8574053516112442, 0.0, 0.0, 0.0, 0.47, 0.0]
     system_nbp = EphemerisNBP(:earth, :moon)
     prob = State(system_nbp, SynodicFrame(), u0, (0., 3600.0*24*30))
 
     # Test that converting to and from inertial frames works
     inert_prob = convert_to_frame(prob, InertialFrame())
     synod_prob = convert_to_frame(inert_prob, SynodicFrame())
-    @test synod_prob.prob.u0 ≈ u0
+    # TODO: Don't assume the u0 ordering is changed in the same way
+    @test synod_prob.prob.u0 ≈ prob.u0
 
     # Test that converting to/from non-normalised frames also works
     synod_nonorm_prob = convert_to_frame(prob, SynodicFrame(false))
@@ -33,5 +34,5 @@ using BenchmarkTools
     # Solve and test that converting the solution to synodic also matches
     sol = solve(prob)
     sol2 = convert_to_frame(sol, SynodicFrame())
-    @test sol2.sol.u[begin] ≈ u0
+    @test sol2.sol.u[begin] ≈ prob.u0
 end

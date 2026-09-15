@@ -14,7 +14,7 @@ function ModelingToolkitBase.System(::Type{_ER3BP_ODEFunctions}; name=:ER3BP)
     @parameters  μ  # Mass fraction
     @parameters  e  # Eccentricity
     @independent_variables  f  # True anomaly
-    @variables   x(f) y(f) z(f)
+    @variables   x(f) y(f) z(f) xˍf(f) yˍf(f) zˍf(f)
     D, D2 = Differential(f), Differential(f)^2
     Dx, Dy, Dz = Differential.((x, y, z))
 
@@ -29,9 +29,9 @@ function ModelingToolkitBase.System(::Type{_ER3BP_ODEFunctions}; name=:ER3BP)
     system = System(
         eqs,
         f,
-        [x, y, z],
+        [x, y, z, xˍf, yˍf, zˍf],
         [μ, e];
-        name
+        name=:aa
     )
     return system
 end

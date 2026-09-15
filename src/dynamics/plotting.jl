@@ -12,6 +12,38 @@ function ellipse_by_axis(x, y; a, b, num=500)
     return @. (x + a * cos(θ), y + b * sin(θ))
 end
 
+function get_x_y(model::M) where { M <: Abstract_DynamicalModel }
+    us = unknowns(model.ode)
+    x = findfirst(isequal(model.x), us)
+    y = findfirst(isequal(model.y), us)
+    return (x, y)
+end
+
+xyz_to_idx(_, i::Int) = i
+function xyz_to_idx(_, var::Symbol)
+    if var == :x
+        return 1
+    elseif var == :y
+        return 2
+    elseif var == :z
+        return 3
+    else
+        error("Unknown variable: $var")
+    end
+end
+
+function xyz_to_idx(model::M, var::Num) where { M <: Abstract_DynamicalModel }
+    if var == model.x
+        return 1
+    elseif var == model.y
+        return 2
+    elseif var == model.z
+        return 3
+    else
+        error("Unknown variable: $var")
+    end
+end
+
 @recipe function f(sols::AbstractArray{<:Trajectory})
     sols, sols[1].frame
 end
@@ -86,7 +118,7 @@ end
         end
 
         # Plot the trajectory
-        idxs --> (3, 2)  # (x, y)
+        idxs --> get_x_y(traj.model)
         denseplot --> get(plotattributes, :denseplot, true)
 
         xlim, ylim = get_margin_lims(traj, plotattributes)
@@ -150,7 +182,9 @@ end
     plot_libration = get(plotattributes, :libration_points, true)
     circ_props = R3BPSystemProperties(primary_body(model), secondary_body(model))
 
-    vars = get(plotattributes, :vars, (3, 2))
+    vars = get(plotattributes, :idxs, get_x_y(model))
+    idx1 = xyz_to_idx(model, vars[1])
+    idx2 = xyz_to_idx(model, vars[2])
 
     @series begin
         seriestype := :shape
@@ -160,10 +194,10 @@ end
         label := nolabels ? "" : titlecase(String(primary_body(model)))
         line_z := nothing
 
-        primary_pos = (-circ_props.μ, 0., 0.)
-        ellipse_by_axis(primary_pos[vars[1]], primary_pos[vars[2]];
-                        a = ustrip(circ_props.R1[vars[1]] / circ_props.L),
-                        b = ustrip(circ_props.R1[vars[2]] / circ_props.L))
+        primary_pos = (-circ_props.μ, 0.0, 0.0)
+        ellipse_by_axis(primary_pos[idx1], primary_pos[idx2];
+                        a = ustrip(circ_props.R1[idx1] / circ_props.L),
+                        b = ustrip(circ_props.R1[idx2] / circ_props.L))
     end
 
     @series begin
@@ -175,9 +209,9 @@ end
         line_z := nothing
 
         secondary_pos = (1 - circ_props.μ, 0., 0.)
-        ellipse_by_axis(secondary_pos[vars[1]], secondary_pos[vars[2]];
-                        a = ustrip(circ_props.R2[vars[1]] / circ_props.L),
-                        b = ustrip(circ_props.R2[vars[2]] / circ_props.L))
+        ellipse_by_axis(secondary_pos[idx1], secondary_pos[idx2];
+                        a = ustrip(circ_props.R2[idx1] / circ_props.L),
+                        b = ustrip(circ_props.R2[idx2] / circ_props.L))
     end
 
     @series begin
@@ -201,7 +235,7 @@ end
             if vars[1] == 1
                 [1 - circ_props.μ]
             else
-                [0.]
+                [0.0]
             end
         end
     end
@@ -218,7 +252,7 @@ end
             markersize := 3
             label := nolabels ? "" : "Libration points"
             line_z := nothing
-            [l[vars[1]] for l in L], [l[vars[2]] for l in L]
+            [l[idx1] for l in L], [l[idx2] for l in L]
         else
             [], []
         end
@@ -244,7 +278,9 @@ end
 
 function get_margin_lims(sol::Trajectory, plotattributes)
     margins = get(plotattributes, :padding, 0.10)
-    a, b = get(plotattributes, :vars, (3, 2))
+    a, b = get(plotattributes, :idxs, get_x_y(sol.model))
+    a = xyz_to_idx(sol.model, a)
+    b = xyz_to_idx(sol.model, b)
 
     # Work out the maximum extent of the orbit
     x, y = (ForwardDiff.value.(sol.sol[a,:]), ForwardDiff.value.(sol.sol[b,:]))
