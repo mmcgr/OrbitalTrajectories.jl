@@ -86,7 +86,7 @@ end
         end
 
         # Plot the trajectory
-        idxs --> (1, 2)  # (x, y)
+        idxs --> (3, 2)  # (x, y)
         denseplot --> get(plotattributes, :denseplot, true)
 
         xlim, ylim = get_margin_lims(traj, plotattributes)
@@ -135,7 +135,7 @@ end
             tspan_norm, max_eigenvalues
         end
     else
-        vars = get(plotattributes, :vars, (1,2))
+        vars = get(plotattributes, :vars, (3, 2))
         ([[u[v].value for u in u_vals] for v in vars]...,)
     end
 end
@@ -150,7 +150,7 @@ end
     plot_libration = get(plotattributes, :libration_points, true)
     circ_props = R3BPSystemProperties(primary_body(model), secondary_body(model))
 
-    vars = get(plotattributes, :vars, (1,2))
+    vars = get(plotattributes, :vars, (3, 2))
 
     @series begin
         seriestype := :shape
@@ -244,7 +244,7 @@ end
 
 function get_margin_lims(sol::Trajectory, plotattributes)
     margins = get(plotattributes, :padding, 0.10)
-    a, b = get(plotattributes, :vars, (1, 2))
+    a, b = get(plotattributes, :vars, (3, 2))
 
     # Work out the maximum extent of the orbit
     x, y = (ForwardDiff.value.(sol.sol[a,:]), ForwardDiff.value.(sol.sol[b,:]))
