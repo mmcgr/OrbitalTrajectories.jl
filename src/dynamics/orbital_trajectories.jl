@@ -77,9 +77,10 @@ end
 
 # Indexing
 Base.getindex(state::State, idx...) = getindex(state.prob.u0, idx...)
-Base.getindex(traj::Trajectory, idx...) = State(traj.model, traj.frame, getindex(traj.sol, idx...), (traj.sol.t[idx...], traj.sol.t[idx...]))
+Base.getindex(state::State, idx::Union{Tuple, AbstractArray}) = getindex(state.prob, idx)
+Base.getindex(traj::Trajectory, idx::Int...) = State(traj.model, traj.frame, getindex(traj.sol, idx...), (traj.sol.t[idx...], traj.sol.t[idx...]))
 Base.getindex(traj::Trajectory, idx::Int) = State(traj.model, traj.frame, getindex(traj.sol.u, idx), (traj.sol.t[idx], traj.sol.t[idx]))
-Base.getindex(traj::Trajectory, idx::AbstractArray{Int}) = State(traj.model, traj.frame, getindex(traj.sol, idx), (traj.sol.t[idx], traj.sol.t[idx]))
+Base.getindex(traj::Trajectory, idx::AbstractArray{Int}) = State(traj.model, traj.frame, getindex(traj.sol.u, idx), (traj.sol.t[idx], traj.sol.t[idx]))
 Base.axes(state::State, idx...) = axes(state.prob, idx...)
 Base.axes(traj::Trajectory, idx...) = axes(traj.sol, idx...)
 Base.firstindex(traj::Trajectory) = firstindex(traj.sol.u)

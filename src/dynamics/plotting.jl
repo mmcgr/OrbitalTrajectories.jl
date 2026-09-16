@@ -44,13 +44,13 @@ function xyz_to_idx(model::M, var::Num) where { M <: Abstract_DynamicalModel }
     end
 end
 
-@recipe function f(sols::AbstractArray{<:Trajectory})
-    sols, sols[1].frame
+@recipe function f(trajs::AbstractArray{<:Trajectory})
+    trajs, trajs[1].frame
 end
 
-@recipe function f(sols::AbstractArray{<:Trajectory}, frame::Abstract_ReferenceFrame)
+@recipe function f(trajs::AbstractArray{<:Trajectory}, frame::Abstract_ReferenceFrame)
     values = get(plotattributes, :values, nothing)
-    plot_cbar = !isnothing(values) && length(values) == length(sols)
+    plot_cbar = !isnothing(values) && length(values) == length(trajs)
 
     user_xlim = pop!(plotattributes, :xlims, nothing)
     user_ylim = pop!(plotattributes, :ylims, nothing)
@@ -61,8 +61,8 @@ end
     xlim = (Inf, -Inf)
     ylim = (Inf, -Inf)
 
-    for (i, sol) in enumerate(sols)
-        current_xlim, current_ylim = get_margin_lims(convert_to_frame(sol, frame), plotattributes)
+    for (i, traj) in enumerate(trajs)
+        current_xlim, current_ylim = get_margin_lims(convert_to_frame(traj, frame), plotattributes)
         if isnothing(user_xlim)
             xlim = (min(xlim[1], current_xlim[1]), max(xlim[2], current_xlim[2]))
         else
@@ -91,10 +91,10 @@ end
             end
             xlims := xlim
             ylims := ylim
-            if i < length(sols)
+            if i < length(trajs)
                 nomodel := true
             end
-            sol, frame
+            traj, frame
         end
     end
 end
