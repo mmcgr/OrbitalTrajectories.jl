@@ -29,7 +29,7 @@ function convert_to_frame(traj::Trajectory, frame::F) where {F<:Abstract_Referen
     function interp_and_convert(times, idxs, deriv::Type{Val{0}}, p, continuity::Symbol=:left)
         # The interpolation needs to use all indices, even when only two will be displayed
         u = deepcopy(traj.interp(times, nothing, deriv, p, continuity))
-        convert_u!(u.u, times, traj, frame)
+        convert_u!(u, times, traj, frame)
         return u
     end
 
@@ -37,12 +37,18 @@ function convert_to_frame(traj::Trajectory, frame::F) where {F<:Abstract_Referen
 
     return Trajectory(traj.model, frame, new_sol)
 end
-function convert_u!(u::AbstractArray, times::AbstractArray, traj, frame)
+
+function convert_u!(u::AbstractArray{A, 1}, times::AbstractArray, traj, frame) where {A <: AbstractArray{<:Any, 1}}
     for (i, t) in enumerate(times)
         convert_u!(u[i], t, traj, frame)
     end
 end
-function convert_u!(u, t, traj, frame)
+function convert_u!(u::AbstractArray{Float64, 2}, times::AbstractArray, traj, frame)
+    for (i, t) in enumerate(times)
+        convert_u!(u[:,i], t, traj, frame)
+    end
+end
+function convert_u!(u::AbstractArray{Float64, 1}, t::Float64, traj, frame)
     prob1 = remake(traj.sol.prob; u0=u, tspan=(t, t))
     new_state = convert_to_frame(State(traj.model, traj.frame, prob1), frame)
     u .= new_state.prob.u0
