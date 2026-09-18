@@ -1,7 +1,7 @@
 using OrbitalTrajectories
 
 using Test
-using LinearAlgebra
+using LinearAlgebra: norm
 
 @testset "Pellegrini2016" begin
     # Values taken from Table 1 of [Pellegrini 2016, On the Computation and Accuracy of Trajectory State Transition Matrices]
