@@ -66,7 +66,7 @@ ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.mode
 
 # Given a state and a state array u0 ordered by the states uknowns, return u0 ordered by
 # [x, y, z, Dx(x), Dx(y), Dx(z)]
-function order_u0(state::State, u0::AbstractArray{Float64})
+function order_u0(state::State, u0::AbstractArray)
     return order_u0!(state, copy(u0))
 end
 
@@ -77,10 +77,10 @@ end
 
 # Given a state and a state array u0 ordered by the states unknowns, return u0 ordered by
 # [x, y, z, Dx(x), Dx(y), Dx(z)]
-order_u0!(state::State, u0::AbstractArray{Float64}) =
+order_u0!(state::State, u0::AbstractArray) =
     order_u0!(state.model, u0)
 
-function order_u0!(model::M, u0::AbstractArray{Float64}) where {M<:Abstract_DynamicalModel}
+function order_u0!(model::M, u0::AbstractArray) where {M<:Abstract_DynamicalModel}
     sys = model.ode.ode_system
     expected_us = _expected_vars(model)
     # expected_us = _unknowns_default_orderinging(model)
@@ -91,10 +91,10 @@ end
 
 # Given a state and a state array u0 ordered by the states unknowns, return u0 invordered by
 # [x, y, z, Dx(x), Dx(y), Dx(z)]
-invorder_u0!(state::State, u0::AbstractArray{Float64}) =
+invorder_u0!(state::State, u0::AbstractArray) =
     invorder_u0!(state.model, u0)
 
-function invorder_u0!(model::M, u0::AbstractArray{Float64}) where {M <: Abstract_DynamicalModel}
+function invorder_u0!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel}
     sys = model.ode.ode_system
     expected_us = _expected_vars(model)
     # expected_us = _unknowns_default_orderinging(model)
