@@ -51,7 +51,7 @@ end
 function convert_u!(u::AbstractArray{Float64, 1}, t::Float64, traj, frame)
     prob1 = remake(traj.sol.prob; u0=u, tspan=(t, t))
     new_state = convert_to_frame(State(traj.model, traj.frame, prob1), frame)
-    u .= new_state.prob.u0
+    u .= ordered_u0(new_state)
 end
 
 const CRASHED_RETCODE = SciMLBase.ReturnCode.Terminated

@@ -266,7 +266,9 @@ end
 
 @recipe function f(state::State)
     seriestype := :scatter
-    ([state.prob.u0[1]], [state.prob.u0[2]])
+    # TODO: Is this used, and should it respect :idxs?
+    u0 = ordered_u0(state)
+    ([u0[1]], [u0[2]])
 end
 
 @recipe function f(state::State, frame::Abstract_ReferenceFrame)

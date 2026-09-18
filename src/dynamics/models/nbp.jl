@@ -37,11 +37,13 @@ end
 # NB: Need the parameter name "T" in place for @memoize to work
 @memoize function ModelingToolkitBase.System(T::Type{_NBP_ODEFunctions}, props::NBPSystemProperties; name = :EphemerisNBP)
     @parameters t  # Time in J2000 epoch
-    @variables x(t) y(t) z(t)
+    @variables x(t) y(t) z(t) xˍt(t) yˍt(t) zˍt(t)
     D2 = Differential(t)^2
 
     accelerations = zeros(Num, 3)
     pos = [x, y, z]
+    # Full position vector including time derivatives so we can easily refer to them later.
+    full_pos = [pos..., xˍt, yˍt, zˍt]
 
     for (body, μ) in zip(props.bodies, props.μ)
         # See also [DeiTos2017, Eqs. 14], [JTOP implementation], [Ozaki2017, Eq.2]
@@ -67,13 +69,17 @@ end
     end
 
     # Equations of motion: sum of all accelerations
+    # OG: eqs = @. D2(pos) ~ sum(accelerations)
+    # TODO: Is it the sum for each component of the acceleration vector (the sum of a single value),
+    #       or should it be the sum of the vector itself?
+
     eqs = expand_derivatives.([
-        D2(x) ~ sum(accelerations),
-        D2(y) ~ sum(accelerations),
-        D2(z) ~ sum(accelerations),
+        D2(x) ~ sum(accelerations[1]),
+        D2(y) ~ sum(accelerations[2]),
+        D2(z) ~ sum(accelerations[3]),
     ])
     # Build the 2nd-order ODE props
-    return System(eqs, t, pos, []; name)
+    return System(eqs, t, full_pos, []; name)
 end
 
 #---------------------#
@@ -94,6 +100,10 @@ end
 
 Base.show(io::IO, x::EphemerisNBP) = print(io, "$(nameof(typeof(x)))$(x.props)")
 ModelingToolkit.parameters(::EphemerisNBP) = SVector{0,Float64}()
+function _expected_vars(sys::EphemerisNBP)
+    sys = sys.ode.ode_system
+    return [sys.x, sys.y, sys.z, sys.xˍt, sys.yˍt, sys.zˍt]
+end
 
 # HELPERS
 
@@ -125,16 +135,16 @@ function convert_to_frame(state::State{<:EphemerisNBP,<:Abstract_ReferenceFrame}
     converted_u0 = state_to_frame(state, frame, to_synodic, inv_synodic)
     # end
 
+    invorder_u0!(state, converted_u0)
     prob1 = remake(state.prob; u0=converted_u0)
-    model::EphemerisNBP = state.model
-
-    state = State(model, frame, prob1)
+    state = State(state.model, frame, prob1)
     return state
 end
 
 function state_to_frame(state::State{<:EphemerisNBP,InertialFrame}, frame::SynodicFrame{true}, to_synodic, inv_synodic)
     u1 = state_to_frame(state, SynodicFrame(false), to_synodic, inv_synodic)
-    return state_to_frame(State(state.model, SynodicFrame(false), u1, state.prob.tspan), frame, to_synodic, inv_synodic)
+    new_state = State(state.model, SynodicFrame(false), u1, state.prob.tspan)
+    return state_to_frame(new_state, frame, to_synodic, inv_synodic)
 end
 
 function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::SynodicFrame{true}, to_synodic, inv_synodic)
@@ -143,6 +153,7 @@ function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::Syno
     # Normalise the state
     circ_props = R3BPSystemProperties(primary_body(state), secondary_body(state))
     u1 = copy(state.prob.u0)
+    order_u0!(state, u1)
     P, V = norm(secondary_u0[1:3]), norm(secondary_u0[4:6])
     u1[1:3] .= (u1[1:3] - synod_secondary_u0[1:3]) ./ P + [1 - circ_props.μ, 0., 0.]
     u1[4:6] .= (u1[4:6] - synod_secondary_u0[4:6]) ./ V
@@ -165,8 +176,9 @@ function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::Syn
     # De-normalise
     circ_props = R3BPSystemProperties(primary_body(state), secondary_body(state))
     u1 = copy(state.prob.u0)
+    order_u0!(state, u1)
     P, V = norm(secondary_u0[1:3]), norm(secondary_u0[4:6])
-    u1[1:3] .= (u1[1:3] - [1 - circ_props.μ, 0., 0.]) .* P + synod_secondary_u0[1:3]
+    u1[1:3] .= (u1[1:3] - [1 - circ_props.μ, 0.0, 0.0]) .* P + synod_secondary_u0[1:3]
     u1[4:6] .= u1[4:6] .* V + synod_secondary_u0[4:6]
 
     if length(u1) == (STATE_DIMS + STATE_DIMS*STATE_DIMS)
@@ -183,13 +195,20 @@ end
 
 function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, frame, to_synodic, inv_synodic)
     u1 = state_to_frame(state, SynodicFrame(false), to_synodic, inv_synodic)
-    return state_to_frame(State(state.model, SynodicFrame(false), u1, state.prob.tspan), frame, to_synodic, inv_synodic)
+    new_state = State(state.model, SynodicFrame(false), u1, state.prob.tspan)
+    return state_to_frame(new_state, frame, to_synodic, inv_synodic)
 end
 
-state_to_frame(state::State{<:EphemerisNBP,<:InertialFrame}, ::SynodicFrame{false}, to_synodic, inv_synodic) =
-    u0_to_frame(state.prob.u0, to_synodic)
-state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{false}}, ::InertialFrame, to_synodic, inv_synodic) =
-    u0_to_frame(state.prob.u0, inv_synodic)
+function state_to_frame(state::State{<:EphemerisNBP,<:InertialFrame}, ::SynodicFrame{false}, to_synodic, inv_synodic)
+    u0 = copy(state.prob.u0)
+    order_u0!(state, u0)
+    return u0_to_frame(u0, to_synodic)
+end
+function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{false}}, ::InertialFrame, to_synodic, inv_synodic)
+    u0 = copy(state.prob.u0)
+    order_u0!(state, u0)
+    return u0_to_frame(u0, inv_synodic)
+end
 
 # Dispatch on MVectors
 const STATE_DIMS = 6

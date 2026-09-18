@@ -6,19 +6,19 @@ export collision, check_distance, crashed
 # ORBITAL PROBLEMS #
 #------------------#
 
-# Map from an initial state array in the expected order.
-# u0 is expected to be in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
-function u0_map(model::M, u0::AbstractArray{Float64}) where M<:Abstract_DynamicalModel
+function _unknowns_default_ordering(model::M) where M<:Abstract_DynamicalModel
     iv = independent_variable(model.ode.ode_system)
     D = Differential(iv)
 
-    d = Dict{Num, Float64}()
-    d[model.x] = u0[1]
-    d[model.y] = u0[2]
-    d[model.z] = u0[3]
-    d[D(model.x)] = u0[4]
-    d[D(model.y)] = u0[5]
-    d[D(model.z)] = u0[6]
+    us = [model.x, model.y, model.z, D(model.x), D(model.y), D(model.z)]
+    return us
+end
+
+# Generate a map from expected unknowns using an initial state array.
+# The input u0 is expected to be in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
+function u0_map(model::M, u0::AbstractArray{Float64}) where M<:Abstract_DynamicalModel
+    us = _unknowns_default_ordering(model)
+    d = Dict{Num, Float64}(@. (us .=> u0))
 
     merge!(d, parameter_map(model))
 
@@ -63,6 +63,50 @@ secondary_body(traj::Trajectory) = secondary_body(traj.model)
 
 SciMLBase.remake(state::State; kwargs...) = State(state.model, state.frame, remake(state.prob; kwargs...))
 ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.model)
+
+# Given a state and a state array u0 ordered by the states uknowns, return u0 ordered by
+# [x, y, z, Dx(x), Dx(y), Dx(z)]
+function order_u0(state::State, u0::AbstractArray{Float64})
+    return order_u0!(state, copy(u0))
+end
+
+function _expected_vars(sys::M) where M<:Abstract_DynamicalModel
+    sys = sys.ode.ode_system
+    return [sys.x, sys.y, sys.z, sys.xˍf, sys.yˍf, sys.zˍf]
+end
+
+# Given a state and a state array u0 ordered by the states unknowns, return u0 ordered by
+# [x, y, z, Dx(x), Dx(y), Dx(z)]
+order_u0!(state::State, u0::AbstractArray{Float64}) =
+    order_u0!(state.model, u0)
+
+function order_u0!(model::M, u0::AbstractArray{Float64}) where {M<:Abstract_DynamicalModel}
+    sys = model.ode.ode_system
+    expected_us = _expected_vars(model)
+    # expected_us = _unknowns_default_orderinging(model)
+    ordering = [findfirst(uu->isequal(u, uu), unknowns(sys)) for u in expected_us]
+    permute!(u0, ordering)
+    return u0
+end
+
+# Given a state and a state array u0 ordered by the states unknowns, return u0 invordered by
+# [x, y, z, Dx(x), Dx(y), Dx(z)]
+invorder_u0!(state::State, u0::AbstractArray{Float64}) =
+    invorder_u0!(state.model, u0)
+
+function invorder_u0!(model::M, u0::AbstractArray{Float64}) where {M <: Abstract_DynamicalModel}
+    sys = model.ode.ode_system
+    expected_us = _expected_vars(model)
+    # expected_us = _unknowns_default_orderinging(model)
+    ordering = [findfirst(uu->isequal(u, uu), unknowns(sys)) for u in expected_us]
+    invpermute!(u0, ordering)
+    return u0
+end
+
+# Return u0 in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
+function ordered_u0(state::State)
+    return order_u0(state, state.prob.u0)
+end
 
 #---------------#
 # INTERPOLATION #
@@ -135,7 +179,6 @@ end
 
 const DEFAULT_ALG = Vern7();
 
-# XXX: Required to support solving a State problem.
 SciMLBase.solve(state::State, args...; reltol=1e-10, abstol=1e-10, kwargs...) =
     SciMLBase.__solve(state, args...; reltol, abstol, kwargs...)
 
