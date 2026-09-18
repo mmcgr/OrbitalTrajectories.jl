@@ -147,7 +147,7 @@ function state_to_frame(state::State{<:EphemerisNBP,InertialFrame}, frame::Synod
     return state_to_frame(new_state, frame, to_synodic, inv_synodic)
 end
 
-function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::SynodicFrame{true}, to_synodic, inv_synodic)
+function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::SynodicFrame{true}, to_synodic, _)
     secondary_u0 = SpiceUtils.get_state(state.prob.tspan[1], secondary_body(state), primary_body(state))
     synod_secondary_u0 = to_synodic * secondary_u0
     # Normalise the state
@@ -170,7 +170,7 @@ function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::Syno
     return u1
 end
 
-function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::SynodicFrame{false}, to_synodic, inv_synodic)
+function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::SynodicFrame{false}, to_synodic, _)
     secondary_u0 = SpiceUtils.get_state(state.prob.tspan[1], secondary_body(state), primary_body(state))
     synod_secondary_u0 = to_synodic * secondary_u0
     # De-normalise
@@ -199,12 +199,12 @@ function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, frame
     return state_to_frame(new_state, frame, to_synodic, inv_synodic)
 end
 
-function state_to_frame(state::State{<:EphemerisNBP,<:InertialFrame}, ::SynodicFrame{false}, to_synodic, inv_synodic)
+function state_to_frame(state::State{<:EphemerisNBP,<:InertialFrame}, ::SynodicFrame{false}, to_synodic, _)
     u0 = copy(state.prob.u0)
     order_u0!(state, u0)
     return u0_to_frame(u0, to_synodic)
 end
-function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{false}}, ::InertialFrame, to_synodic, inv_synodic)
+function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{false}}, ::InertialFrame, _, inv_synodic)
     u0 = copy(state.prob.u0)
     order_u0!(state, u0)
     return u0_to_frame(u0, inv_synodic)
