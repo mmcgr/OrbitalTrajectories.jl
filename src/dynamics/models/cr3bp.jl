@@ -50,6 +50,8 @@ function CR3BP{handcoded}(props::R3BPSystemProperties) where {handcoded<:Val{tru
     CR3BP{true, typeof(ode), typeof(props)}(ode, props)
 end
 ModelingToolkit.parameters(model::CR3BP{true}) = SVector(model.props.μ)
+State(model::CR3BP{true}, frame::F, u0::AbstractArray{Float64}, tspan) where {F<:Abstract_ReferenceFrame} =
+    State(model, frame, ODEProblem(model, u0, tspan, parameters(model)))
 
 #---------#
 # METHODS #
