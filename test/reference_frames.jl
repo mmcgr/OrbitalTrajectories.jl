@@ -119,8 +119,7 @@ end
         (20, [-0.019070893263767097, 0.6214020564363437, 0.0, -1.259320136610032, -0.41926726731292824, 0.0])
     ]
 
-    for (i, pos) in positions
-        expected_u0 = order_u0!(traj_i.model, copy(pos))
+    for (i, expected_u0) in positions
         @test traj_i.sol[:,i] ≈ expected_u0 atol=1e-4
     end
 end
@@ -139,7 +138,6 @@ end
     # Translate from x,y,z to the order used by the state
     for position in positions
         order_u0!(state, position[2])
-        order_u0!(state, position[3])
     end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)
@@ -162,7 +160,6 @@ end
     # Translate from x,y,z to the order used by the state
     for position in positions
         order_u0!(state, position[2])
-        order_u0!(state, position[3])
     end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)
@@ -185,7 +182,6 @@ end
     # Translate from x,y,z to the order used by the state
     for position in positions
         order_u0!(state, position[2])
-#        order_u0!(state, position[3])
     end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)

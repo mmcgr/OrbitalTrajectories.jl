@@ -164,6 +164,7 @@ end
 function convert_to_frame(state::State{<:Abstract_R3BPModel,<:SynodicFrame}, frame::InertialFrame)
     to_inertial = state_to_inertial(state.tspan[1])
     converted_u0 = to_inertial * ordered_u0(state)
+    invorder_u0!(state.model, converted_u0)
     new_state = remake(state; frame, u0=converted_u0)
     return new_state
 end

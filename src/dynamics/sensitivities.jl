@@ -37,12 +37,13 @@ end
 @doc """ Sensitivity of the full propagated trajectory with respect to initial state. """
 sensitivity_trace(m::Module, args...; kwargs...) = sensitivity_trace(Val(first(fullname(m))), args...; kwargs...)
 function sensitivity_trace(::Val{:ForwardDiff}, state::State, desired_frame=state.frame, alg=DEFAULT_ALG; trace_time=false, kwargs...)
-    values = trace_time ? [state.u0..., state.tspan[end] - state.tspan[begin]] : state.u0
+    u0 = state.u0
+    values = trace_time ? [u0..., state.tspan[end] - state.tspan[begin]] : u0
 
     # Seed the values we want to trace with Dual numbers
     tag = typeof(state.model)
     duals = SciMLSensitivity.seed_duals(values, tag)
-    u0 = MVector{length(state.u0)}(duals[1:length(state.u0)])
+    u0 = MVector{length(u0)}(duals[1:length(u0)])
 
     # Remake the state with the seeded values
     tspan = trace_time ? (state.tspan[begin], state.tspan[begin] + duals[end]) : state.tspan

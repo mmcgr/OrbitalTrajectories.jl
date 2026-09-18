@@ -66,3 +66,39 @@ end
     STM_AD_trace = sensitivity_trace(AD, prob)
     @test extract_STMs([STM_AD_trace.sol[:,end]])[1] ≈ STM_AD rtol=1e-5
 end
+
+@testset "EphemerisNBP STM computation - absolute" begin
+    function permute_sensitivity(state, a)
+        p = OrbitalTrajectories.Dynamics._model_ordering(state.model)
+        return a[p, p]
+    end
+    u0 = [0.8574053516112442, 0.0, 0.0, 0.0, 0.47, 0.0]
+    tspan = (0.0, 3600.0*24)
+    model = EphemerisNBP(:earth, :moon)
+    state = State(model, SynodicFrame(), u0, tspan)
+
+    expected_STM = [
+        1.2993178575812105 -0.09155050962480367 3.5806458411312535e-6 0.22157811033467473 0.0364090338286375 -2.3919101958202677e-6;
+        -0.12444211119304659 0.9029220039487235 1.8459510781214097e-6 -0.05190941389539204 0.19629131615085213 -1.921640109660043e-5;
+        -3.627295641960973e-6 6.295871157840424e-6 0.8430793401887287 -3.4258974957029967e-6 1.989127540705744e-5 0.19752722314179738;
+        2.623575673448739 -1.1639253839131734 -1.2388062473258362e-6 1.1676099459724318 0.2987851893173867 -3.736126012314366e-5;
+        -1.702822368639892 -0.5018402795952146 0.00011082272558727774 -0.5709232945047221 0.8671342315792283 -0.0001796795877059251;
+        -0.00015756415038688563 7.198068156630559e-5 -1.3847003822298243 -6.132670891463197e-5 0.0001982044012257495 0.8595117098688569
+    ]
+    # Compute final STM
+    STM_AD = sensitivity(AD, state)
+    STM_AD .= STM_AD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
+    @test STM_AD ≈ expected_STM rtol=1e-5
+
+
+    STM_FD = sensitivity(FD, state)
+    STM_FD .= STM_FD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
+    @test STM_FD ≈ expected_STM rtol=1e-5
+
+    # Compute STM trace
+    STM_AD_trace = sensitivity_trace(AD, state)
+    extracted_STM = extract_STMs([STM_AD_trace.sol[:,end]])[1]
+    STM_FD .= STM_FD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
+    extracted_STM .= extracted_STM[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
+    @test extracted_STM ≈ expected_STM rtol=1e-5
+end
