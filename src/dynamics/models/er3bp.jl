@@ -31,7 +31,7 @@ function ModelingToolkitBase.System(::Type{_ER3BP_ODEFunctions}; name=:ER3BP)
         f,
         [x, y, z, xˍf, yˍf, zˍf],
         [μ, e];
-        name=:aa
+        name
     )
     return system
 end
