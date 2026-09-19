@@ -52,6 +52,8 @@ end
 ModelingToolkit.parameters(model::CR3BP{true}) = SVector(model.props.μ)
 State(model::CR3BP{true}, frame::F, u0::AbstractArray{Float64}, tspan) where {F<:Abstract_ReferenceFrame} =
     State(model, frame, ODEProblem(model, u0, tspan, parameters(model)))
+order_u0!(_::CR3BP{true}, u0::AbstractArray{T, 1}) where {T} = u0
+invorder_u0!(_::CR3BP{true}, u0::AbstractArray{T, 1}) where {T} = u0
 
 #---------#
 # METHODS #

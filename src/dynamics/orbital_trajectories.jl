@@ -179,13 +179,12 @@ end
 
 const DEFAULT_ALG = Vern7();
 
-SciMLBase.solve(state::State, args...; reltol=1e-10, abstol=1e-10, kwargs...) =
-    SciMLBase.__solve(state, args...; reltol, abstol, kwargs...)
-
-SciMLBase.__solve(state::State; kwargs...) = SciMLBase.__solve(state, DEFAULT_ALG; kwargs...)
+function SciMLBase.solve(state::State, alg::OrdinaryDiffEqAlgorithm=DEFAULT_ALG; reltol=1e-10, abstol=1e-10, kwargs...)
+    return SciMLBase.__solve(state, alg; reltol, abstol, kwargs...)
+end
 
 # The __solve() method does the actual heavy lifting, including converting to a Trajectory.
-function SciMLBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata=Dict(), callback=nothing, kwargs...)
+function SciMLBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm=DEFAULT_ALG; reltol=1e-10, abstol=1e-10, userdata=Dict(), callback=nothing, kwargs...)
     default_frame = default_reference_frame(state.model)
     real_state = convert_to_frame(state, default_frame)
 
@@ -200,6 +199,6 @@ function SciMLBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm; userdata=
     callback = deepcopy(callback)
 
     # Call the underlying solver
-    raw_sol = solve(real_state.prob, alg; callback, kwargs...)
+    raw_sol = solve(real_state.prob, alg; reltol, abstol, callback, kwargs...)
     return Trajectory(state.model, default_frame, raw_sol)
 end

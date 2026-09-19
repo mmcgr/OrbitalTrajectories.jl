@@ -7,7 +7,7 @@ module Dynamics
     using DifferentialEquations
     using SciMLSensitivity
     using SciMLBase
-    using LinearAlgebra: norm
+    using LinearAlgebra: I, norm
     using ModelingToolkit
     using NLsolve
     using LineSearches
