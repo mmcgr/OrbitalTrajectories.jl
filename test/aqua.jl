@@ -8,7 +8,6 @@ using Test
         OrbitalTrajectories;
         # TODO: Are the piracies still needed?
         # treat_as_own = [
-        #     LinearAlgebra.norm,
         #     Base.occursin,
         #     Base.pointer,
         #     Base.unsafe_convert,
