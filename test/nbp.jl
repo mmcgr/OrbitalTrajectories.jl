@@ -35,6 +35,5 @@ using DifferentialEquations
     # Solve and test that converting the solution to synodic also matches
     sol = solve(prob)
     sol2 = convert_to_frame(sol, SynodicFrame())
-    u0 = ordered_u0(prob)
-    @test sol2.sol.u[begin] ≈ u0
+    @test sol2.sol.u[begin] ≈ prob.u0
 end
