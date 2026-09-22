@@ -61,7 +61,9 @@ primary_body(traj::Trajectory) = primary_body(traj.model)
 secondary_body(state::State) = secondary_body(state.model)
 secondary_body(traj::Trajectory) = secondary_body(traj.model)
 
-SciMLBase.remake(state::State; kwargs...) = State(state.model, state.frame, remake(state.prob; kwargs...))
+function SciMLBase.remake(state::State; model = state.model, frame = state.frame, kwargs...)
+    return State(model, frame, remake(state.prob; kwargs...))
+end
 ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.model)
 
 # Given a state and a state array u0 ordered by the states uknowns, return u0 ordered by

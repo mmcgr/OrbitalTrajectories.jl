@@ -136,14 +136,13 @@ function convert_to_frame(state::State{<:EphemerisNBP,<:Abstract_ReferenceFrame}
     # end
 
     invorder_u0!(state, converted_u0)
-    prob1 = remake(state.prob; u0=converted_u0)
-    state = State(state.model, frame, prob1)
+    state = remake(state; frame, u0=converted_u0)
     return state
 end
 
 function state_to_frame(state::State{<:EphemerisNBP,InertialFrame}, frame::SynodicFrame{true}, to_synodic, inv_synodic)
     u1 = state_to_frame(state, SynodicFrame(false), to_synodic, inv_synodic)
-    new_state = State(state.model, SynodicFrame(false), u1, state.prob.tspan)
+    new_state = remake(state, frame=SynodicFrame(false), u0=u1)
     return state_to_frame(new_state, frame, to_synodic, inv_synodic)
 end
 
@@ -195,7 +194,7 @@ end
 
 function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, frame, to_synodic, inv_synodic)
     u1 = state_to_frame(state, SynodicFrame(false), to_synodic, inv_synodic)
-    new_state = State(state.model, SynodicFrame(false), u1, state.prob.tspan)
+    new_state = remake(state, frame=SynodicFrame(false), u0=u1)
     return state_to_frame(new_state, frame, to_synodic, inv_synodic)
 end
 
