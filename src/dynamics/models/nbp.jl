@@ -151,8 +151,7 @@ function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::Syno
     synod_secondary_u0 = to_synodic * secondary_u0
     # Normalise the state
     circ_props = R3BPSystemProperties(primary_body(state), secondary_body(state))
-    u1 = copy(state.prob.u0)
-    order_u0!(state, u1)
+    u1 = ordered_u0(state)
     P, V = norm(secondary_u0[1:3]), norm(secondary_u0[4:6])
     u1[1:3] .= (u1[1:3] - synod_secondary_u0[1:3]) ./ P + [1 - circ_props.μ, 0., 0.]
     u1[4:6] .= (u1[4:6] - synod_secondary_u0[4:6]) ./ V
@@ -174,8 +173,7 @@ function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::Syn
     synod_secondary_u0 = to_synodic * secondary_u0
     # De-normalise
     circ_props = R3BPSystemProperties(primary_body(state), secondary_body(state))
-    u1 = copy(state.prob.u0)
-    order_u0!(state, u1)
+    u1 = ordered_u0(state)
     P, V = norm(secondary_u0[1:3]), norm(secondary_u0[4:6])
     u1[1:3] .= (u1[1:3] - [1 - circ_props.μ, 0.0, 0.0]) .* P + synod_secondary_u0[1:3]
     u1[4:6] .= u1[4:6] .* V + synod_secondary_u0[4:6]
@@ -199,13 +197,11 @@ function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, frame
 end
 
 function state_to_frame(state::State{<:EphemerisNBP,<:InertialFrame}, ::SynodicFrame{false}, to_synodic, _)
-    u0 = copy(state.prob.u0)
-    order_u0!(state, u0)
+    u0 = ordered_u0(state)
     return u0_to_frame(u0, to_synodic)
 end
 function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{false}}, ::InertialFrame, _, inv_synodic)
-    u0 = copy(state.prob.u0)
-    order_u0!(state, u0)
+    u0 = ordered_u0(state)
     return u0_to_frame(u0, inv_synodic)
 end
 
