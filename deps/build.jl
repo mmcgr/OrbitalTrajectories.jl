@@ -1,4 +1,4 @@
-using Pkg.Artifacts
+using Artifacts
 const artifact_toml = find_artifacts_toml(@__DIR__)
 
 # Kernels to be downloaded lazily
