@@ -38,23 +38,30 @@ function convert_to_frame(traj::Trajectory, frame::F) where {F<:Abstract_Referen
     return Trajectory(traj.model, frame, new_sol)
 end
 
-function convert_u!(u::AbstractArray{Arr, 1}, times::AbstractArray, traj, frame) where {Arr <: AbstractArray{<:Any, 1}}
+function convert_u!(u::AbstractArray{Arr, 1}, times::AbstractArray, traj::Trajectory, frame::Abstract_ReferenceFrame) where {Arr <: AbstractArray{<:Any, 1}}
     for (i, t) in enumerate(times)
         convert_u!(u[i], t, traj, frame)
     end
 end
-function convert_u!(u::AbstractArray{A, 2}, times::AbstractArray, traj, frame) where {A <: Any}
+function convert_u!(
+    u::AbstractArray{A, 2},
+    times::AbstractArray,
+    traj::Trajectory,
+    frame::Abstract_ReferenceFrame) where {A <: Any}
     for (i, t) in enumerate(times)
         convert_u!(u[:,i], t, traj, frame)
     end
 end
 # Convert a single state vector to a different reference frame
 # The state vector should be in the expected order for the given model
-# The result is in same order
-function convert_u!(u::AbstractArray{A, 1}, t::Float64, traj, frame) where {A <: Any}
+# The result is in the same order
+function convert_u!(u::AbstractArray{A, 1}, t::Float64, traj::Trajectory, frame::Abstract_ReferenceFrame) where {A <: Any}
     prob1 = remake(traj.sol.prob; u0=u, tspan=(t, t))
-    new_state = convert_to_frame(State(traj.model, traj.frame, prob1), frame)
-    u .= new_state.u0
+    tmp_state = State(traj.model, traj.frame, prob1)
+    new_state = convert_to_frame(tmp_state, frame)
+    # TODO: return state order
+    #u.= new_state.u0
+    u .= ordered_u0(new_state)
 end
 
 const CRASHED_RETCODE = SciMLBase.ReturnCode.Terminated

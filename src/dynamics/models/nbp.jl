@@ -135,7 +135,6 @@ function convert_to_frame(state::State{<:EphemerisNBP,<:Abstract_ReferenceFrame}
     converted_u0 = state_to_frame(state, frame, to_synodic, inv_synodic)
     # end
 
-    invorder_u0!(state, converted_u0)
     state = remake(state; frame, u0=converted_u0)
     return state
 end
@@ -165,7 +164,7 @@ function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::Syno
         vel_vareqns .= vel_vareqns ./ V
     end
 
-    return u1
+    return invorder_u0!(state, u1)
 end
 
 function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::SynodicFrame{false}, to_synodic, _)
@@ -187,7 +186,7 @@ function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::Syn
         vel_vareqns .= vel_vareqns .* V
     end
 
-    return u1
+    return invorder_u0!(state, u1)
 end
 
 function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, frame, to_synodic, inv_synodic)
@@ -198,11 +197,13 @@ end
 
 function state_to_frame(state::State{<:EphemerisNBP,<:InertialFrame}, ::SynodicFrame{false}, to_synodic, _)
     u0 = ordered_u0(state)
-    return u0_to_frame(u0, to_synodic)
+    u1 = u0_to_frame(u0, to_synodic)
+    return invorder_u0!(state, u1)
 end
 function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{false}}, ::InertialFrame, _, inv_synodic)
     u0 = ordered_u0(state)
-    return u0_to_frame(u0, inv_synodic)
+    u1 = u0_to_frame(u0, inv_synodic)
+    return invorder_u0!(state, u1)
 end
 
 # Dispatch on MVectors
