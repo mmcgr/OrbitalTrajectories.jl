@@ -61,54 +61,35 @@ primary_body(traj::Trajectory) = primary_body(traj.model)
 secondary_body(state::State) = secondary_body(state.model)
 secondary_body(traj::Trajectory) = secondary_body(traj.model)
 
-function SciMLBase.remake(state::State; model = state.model, frame = state.frame, kwargs...)
-    return State(model, frame, remake(state.prob; kwargs...))
-end
+SciMLBase.remake(state::State; model = state.model, frame = state.frame, kwargs...) =
+    State(model, frame, remake(state.prob; kwargs...))
 ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.model)
+
+function _expected_vars(model::M) where M<:Abstract_DynamicalModel
+    sys = model.ode.ode_system
+    return [sys.x, sys.y, sys.z, sys.xˍf, sys.yˍf, sys.zˍf]
+end
+function _model_ordering(model::M) where M<:Abstract_DynamicalModel
+    expected_us = _expected_vars(model)
+    return [findfirst(uu->isequal(u, uu), unknowns(model.ode.ode_system)) for u in expected_us]
+end
 
 # Given a state and a state array u0 ordered by the states uknowns, return u0 ordered by
 # [x, y, z, Dx(x), Dx(y), Dx(z)]
-function order_u0(state::State, u0::AbstractArray)
-    return order_u0!(state, copy(u0))
-end
-
-function _expected_vars(sys::M) where M<:Abstract_DynamicalModel
-    sys = sys.ode.ode_system
-    return [sys.x, sys.y, sys.z, sys.xˍf, sys.yˍf, sys.zˍf]
-end
-
-# Given a state and a state array u0 ordered by the states unknowns, return u0 ordered by
-# [x, y, z, Dx(x), Dx(y), Dx(z)]
-order_u0!(state::State, u0::AbstractArray) =
-    order_u0!(state.model, u0)
-
-function order_u0!(model::M, u0::AbstractArray) where {M<:Abstract_DynamicalModel}
-    sys = model.ode.ode_system
-    expected_us = _expected_vars(model)
-    # expected_us = _unknowns_default_orderinging(model)
-    ordering = [findfirst(uu->isequal(u, uu), unknowns(sys)) for u in expected_us]
-    permute!(u0, ordering)
-    return u0
-end
+order_u0(state::State, u0::AbstractArray) = order_u0(state.model, u0)
+order_u0!(state::State, u0::AbstractArray) = order_u0!(state.model, u0)
 
 # Given a state and a state array u0 ordered by the states unknowns, return u0 invordered by
 # [x, y, z, Dx(x), Dx(y), Dx(z)]
-invorder_u0!(state::State, u0::AbstractArray) =
-    invorder_u0!(state.model, u0)
+invorder_u0!(state::State, u0::AbstractArray) = invorder_u0!(state.model, u0)
 
-function invorder_u0!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel}
-    sys = model.ode.ode_system
-    expected_us = _expected_vars(model)
-    # expected_us = _unknowns_default_orderinging(model)
-    ordering = [findfirst(uu->isequal(u, uu), unknowns(sys)) for u in expected_us]
-    invpermute!(u0, ordering)
-    return u0
-end
+order_u0(model::M, u0::AbstractArray) where {M<:Abstract_DynamicalModel} = u0[_model_ordering(model)]
+order_u0!(model::M, u0::AbstractArray) where {M<:Abstract_DynamicalModel} = u0 .= u0[_model_ordering(model)]
+
+invorder_u0!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = invpermute!(u0, _model_ordering(model))
 
 # Return u0 in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
-function ordered_u0(state::State)
-    return order_u0(state, state.prob.u0)
-end
+ordered_u0(state::State) = order_u0(state, state.u0)
 
 #---------------#
 # INTERPOLATION #
