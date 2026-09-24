@@ -5,8 +5,6 @@ module OrbitalTrajectories
     #----------#
     # INCLUDES #
     #----------#
-    include("piracy.jl")
-
     include("SPICE/spice.jl")
     include("dynamics/dynamics.jl")
 
