@@ -12,8 +12,8 @@ function continuation_simple(state::State; x_perturbation = 1.0e-2, ops = (:zero
     props = R3BPSystemProperties(state.model)
 
     # Limits
-    min_x = uconvert(NoUnits, props.R1[1] / props.L) - props.μ
-    max_x = (1 - props.μ) - uconvert(NoUnits, props.R2[1] / props.L)
+    min_x = props.R1[1] / props.L - props.μ
+    max_x = (1 - props.μ) - props.R2[1] / props.L
 
     # Solutions to return
     new_sols::Array{Trajectory} = []

@@ -60,7 +60,8 @@ struct ER3BP{O <: _ER3BP_ODEFunctions, P <: R3BPSystemProperties} <: Abstract_R3
     ode::O
     props::P
 end
-ER3BP(args...; kwargs...) = ER3BP(ER3BP_ODEFunctions, R3BPSystemProperties(args...; kwargs...))
+ER3BP(a::Symbol, b::Symbol; kwargs...) = ER3BP(ER3BP_ODEFunctions, R3BPSystemProperties(a, b; kwargs...))
+ER3BP(system::Abstract_DynamicalModel; kwargs...) = ER3BP(ER3BP_ODEFunctions, R3BPSystemProperties(system; kwargs...))
 
 # XXX: The parameters overload below gives us a performance boost.
 ModelingToolkit.parameters(model::ER3BP) = SVector(model.props.μ, model.props.e)

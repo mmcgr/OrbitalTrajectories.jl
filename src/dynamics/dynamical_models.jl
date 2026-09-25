@@ -72,13 +72,13 @@ ModelingToolkit.varmap_to_vars(model::Abstract_DynamicalModel, varmap) = Modelin
 SciMLBase.isinplace(::Abstract_DynamicalModel) = true
 SciMLBase.isinplace(f::Abstract_DynamicalModel, _) = isinplace(f)
 function Base.getproperty(x::M, b::Symbol) where {M <: Abstract_DynamicalModel}
-    if hasfield(M, b)
+    if hasproperty(x, b)
         return getfield(x, b)
     end
     return getproperty(x.ode, b)
 end
 function Base.getproperty(x::F, b::Symbol) where {F <: Abstract_ModelODEFunctions}
-    if hasfield(F, b)
+    if hasproperty(x, b)
         return getfield(x, b)
     end
     return getproperty(x.ode_system, b)

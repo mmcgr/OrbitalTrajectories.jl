@@ -18,7 +18,9 @@ function NBPSystemProperties(center::Symbol, bodies::Vararg{Symbol})
     bodies = SVector(bodies...)
 
     center_id = bodn2c(String(center))
+    @assert !isnothing(center_id) "Failed to get center ID from SPICE for ($(center))."
     body_ids = @. bodn2c(String(bodies))
+    @assert all(id->!isnothing(id), body_ids) "Failed to get one or more body IDs from SPICE for ($(bodies))."
     μ = SpiceUtils.get_GM.(body_ids)
     return NBPSystemProperties(center, center_id, bodies, body_ids, μ)
 end

@@ -119,7 +119,11 @@ get_state(t::ForwardDiff.Dual, target, reference; kwargs...) = get_state(Forward
 @doc "Get body gravitational constant (GM) from SPICE kernels"
 get_GM(body::String) = bodvrd(body, "GM")[1]
 get_GM(body::Symbol) = get_GM(String(body))
-get_GM(body::Number) = get_GM(bodc2n(body))
+function get_GM(body::Number)
+    name = bodc2n(body)
+    @assert !isnothing(name) "Failed to get body name from SPICE for ID ($(body))."
+    return get_GM(name)
+end
 
 @doc "Get the mass fraction of two bodies (smaller mass divided by total mass)"
 mass_fraction(b1::Symbol, b2::Symbol) = mass_fraction(String(b1), String(b2))

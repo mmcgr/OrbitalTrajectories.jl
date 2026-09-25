@@ -7,7 +7,7 @@ using DynamicQuantities
 using DifferentialEquations
 using SciMLSensitivity
 using SciMLBase
-using LinearAlgebra: I, norm
+using LinearAlgebra: I, norm, eigvals
 using ModelingToolkit
 using NLsolve
 using LineSearches

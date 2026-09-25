@@ -66,7 +66,9 @@ end
     # Convert to the desired frame
     return convert_to_frame(traj_vareqns_unconverted, desired_frame)
 end
-
+@traitfn function sensitivity_trace(::Val{:VariationalEquations}, state::S, args...; kwargs...) where {{S; Not{HasVE{S}}}}
+    error("Variational Equations are not implemented for this state.")
+end
 @doc """ Sensitivity of the state at time t with respect to initial state. """
 function sensitivity(sol::Trajectory, t)
     return extract_STMs(sol, t)
