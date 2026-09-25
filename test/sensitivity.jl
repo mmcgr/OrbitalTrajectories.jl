@@ -5,30 +5,32 @@ using LinearAlgebra: eigvals, norm
 
 @testset "Pellegrini2016" begin
     # Values taken from Table 1 of [Pellegrini 2016, On the Computation and Accuracy of Trajectory State Transition Matrices]
-    test_cases = [(
-        system = (:Jupiter, :Europa),
-        u0     = [-0.1017472008677258, 0.0, 0.0, 0.0, -0.01806028472285857, 0.0],
-        μ      = 2.528009215182033e-5,
-        t_p    = 25.13898226959327,
-        λ_max  = 2.468621114047195,
-    ), (
-        system = (:Jupiter, :Europa),
-        u0     = [0.04867586089512202, 0.0, 0.0, 0.0, -0.09354853663949217, 0.0],
-        μ      = 2.528009215182033e-5,
-        t_p    = 70.53945041512506,
-        λ_max  = 2.804814246519340e7,
-    ), (
-        system = (:Earth, :Moon),
-        u0     = [-0.013059020050628, 0.0, 0.07129515195874, 0.0, -0.526306975588415, 0.0],
-        μ      = 0.01215509906405700,
-        t_p    = 2.517727406553485,
-        λ_max  = 17.632688124231755,
-    )]
+    test_cases = [
+        (
+            system = (:Jupiter, :Europa),
+            u0 = [-0.1017472008677258, 0.0, 0.0, 0.0, -0.01806028472285857, 0.0],
+            μ = 2.528009215182033e-5,
+            t_p = 25.13898226959327,
+            λ_max = 2.468621114047195,
+        ), (
+            system = (:Jupiter, :Europa),
+            u0 = [0.04867586089512202, 0.0, 0.0, 0.0, -0.09354853663949217, 0.0],
+            μ = 2.528009215182033e-5,
+            t_p = 70.53945041512506,
+            λ_max = 2.80481424651934e7,
+        ), (
+            system = (:Earth, :Moon),
+            u0 = [-0.013059020050628, 0.0, 0.07129515195874, 0.0, -0.526306975588415, 0.0],
+            μ = 0.012155099064057,
+            t_p = 2.517727406553485,
+            λ_max = 17.632688124231755,
+        ),
+    ]
 
     function make_states(case)
-        cr3bp = CR3BP(case.system...; μ=case.μ)
-        cr3bp_handcoded = HandcodedCR3BP(case.system...; μ=case.μ)
-        
+        cr3bp = CR3BP(case.system...; μ = case.μ)
+        cr3bp_handcoded = HandcodedCR3BP(case.system...; μ = case.μ)
+
         # The u0 from the paper is given relative to secondary body, so convert here to primary body
         u0 = deepcopy(case.u0)
         u0[1] += (1 - cr3bp.props.μ)
@@ -50,9 +52,9 @@ using LinearAlgebra: eigvals, norm
 
             # Compute the maximum eigenvalues
             λ_max_AD = maximum(norm.(eigvals(Matrix(STM_AD))))
-            @test λ_max_AD ≈ case.λ_max rtol=1e-4
+            @test λ_max_AD ≈ case.λ_max rtol = 1.0e-4
             λ_max_AD_handcoded = maximum(norm.(eigvals(Matrix(STM_AD_handcoded))))
-            @test λ_max_AD_handcoded ≈ case.λ_max rtol=1e-4
+            @test λ_max_AD_handcoded ≈ case.λ_max rtol = 1.0e-4
         end
     end
     @testset "VariationalEquations STM" begin
@@ -66,9 +68,9 @@ using LinearAlgebra: eigvals, norm
 
             # Compute the maximum eigenvalues
             λ_max_VE = maximum(norm.(eigvals(STM_VE)))
-            @test λ_max_VE ≈ case.λ_max rtol=1e-4
+            @test λ_max_VE ≈ case.λ_max rtol = 1.0e-4
             λ_max_VE_handcoded = maximum(norm.(eigvals(STM_VE_handcoded)))
-            @test λ_max_VE_handcoded ≈ case.λ_max rtol=1e-4
+            @test λ_max_VE_handcoded ≈ case.λ_max rtol = 1.0e-4
         end
     end
 end
@@ -76,16 +78,16 @@ end
 @testset "EphemerisNBP STM computation" begin
     u0 = [0.8574053516112442, 0.0, 0.0, 0.0, 0.47, 0.0]
     system_nbp = EphemerisNBP(:earth, :moon)
-    prob = State(system_nbp, SynodicFrame(), u0, (0.0, 3600.0*24))
+    prob = State(system_nbp, SynodicFrame(), u0, (0.0, 3600.0 * 24))
 
     # Compute final STM
     STM_AD = sensitivity(AD, prob)
     STM_FD = sensitivity(FD, prob)
-    @test STM_AD ≈ STM_FD rtol=1e-5
+    @test STM_AD ≈ STM_FD rtol = 1.0e-5
 
     # Compute STM trace
     STM_AD_trace = sensitivity_trace(AD, prob)
-    @test extract_STMs([STM_AD_trace.sol[:,end]])[1] ≈ STM_AD rtol=1e-5
+    @test extract_STMs([STM_AD_trace.sol[:, end]])[1] ≈ STM_AD rtol = 1.0e-5
 end
 
 @testset "EphemerisNBP STM computation - absolute" begin
@@ -94,7 +96,7 @@ end
         return a[p, p]
     end
     u0 = [0.8574053516112442, 0.0, 0.0, 0.0, 0.47, 0.0]
-    tspan = (0.0, 3600.0*24)
+    tspan = (0.0, 3600.0 * 24)
     model = EphemerisNBP(:earth, :moon)
     state = State(model, SynodicFrame(), u0, tspan)
 
@@ -109,16 +111,16 @@ end
     # Compute final STM
     STM_AD = sensitivity(AD, state)
     STM_AD .= STM_AD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
-    @test STM_AD ≈ expected_STM rtol=1e-5
+    @test STM_AD ≈ expected_STM rtol = 1.0e-5
 
     STM_FD = sensitivity(FD, state)
     STM_FD .= STM_FD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
-    @test STM_FD ≈ expected_STM rtol=1e-5
+    @test STM_FD ≈ expected_STM rtol = 1.0e-5
 
     # Compute STM trace
     STM_AD_trace = sensitivity_trace(AD, state)
-    extracted_STM = extract_STMs([STM_AD_trace.sol[:,end]])[1]
+    extracted_STM = extract_STMs([STM_AD_trace.sol[:, end]])[1]
     STM_FD .= STM_FD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
     extracted_STM .= extracted_STM[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
-    @test extracted_STM ≈ expected_STM rtol=1e-5
+    @test extracted_STM ≈ expected_STM rtol = 1.0e-5
 end

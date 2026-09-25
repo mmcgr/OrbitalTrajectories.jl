@@ -22,11 +22,11 @@ end
 @testset "3BP Properties" begin
     # Cross-check the Mars-Phobos system (values from Wikipedia)
     MarsPhobos = OrbitalTrajectories.Dynamics.R3BPSystemProperties(:mars, :phobos)
-    @test MarsPhobos.L ≈ 9376.0u"km" rtol=1e-5
-    @test MarsPhobos.V ≈ 2.138u"km/s" rtol=1e-5
-    @test MarsPhobos.T ≈ 0.31891023u"d"/2π rtol=1e-5
-    @test MarsPhobos.R1 ≈ [3396.2, 3396.2, 3376.2]u"km"  rtol=1e-1
-    @test MarsPhobos.R2 ≈ [13.5, 11., 9.]u"km"  rtol=1e-1
+    @test MarsPhobos.L ≈ 9376.0u"km" rtol = 1.0e-5
+    @test MarsPhobos.V ≈ 2.138u"km/s" rtol = 1.0e-5
+    @test MarsPhobos.T ≈ 0.31891023u"d" / 2π rtol = 1.0e-5
+    @test MarsPhobos.R1 ≈ [3396.2, 3396.2, 3376.2]u"km"  rtol = 1.0e-1
+    @test MarsPhobos.R2 ≈ [13.5, 11.0, 9.0]u"km"  rtol = 1.0e-1
 
     # Check the relationship between libration points
     check_libration_points(MarsPhobos)
@@ -35,12 +35,12 @@ end
     L = check_libration_points(SunMars)
 
     # Validate against constants in [DeiTos2018]
-    @test SunMars.L ≈ 2.279497905330276e8u"km"                          rtol=1e-4
-    @test SunMars.V ≈ 24.128831378998047u"km/s"                         rtol=1e-4
-    @test SunMars.R2[1] ≈ 3396.19u"km"                                  rtol=1e-4
-    @test SunMars.T ≈ 109.3425420965616u"d"                             rtol=1e-4
-    @test L[1][1] ≈ (1 - SunMars.μ) + (-1.082385474e6u"km" / SunMars.L) rtol=1e-4  # (with respect to Mars)
-    @test SunMars.e ≈ 0.0935643512                                      rtol=1e-4
+    @test SunMars.L ≈ 2.279497905330276e8u"km"                          rtol = 1.0e-4
+    @test SunMars.V ≈ 24.128831378998047u"km/s"                         rtol = 1.0e-4
+    @test SunMars.R2[1] ≈ 3396.19u"km"                                  rtol = 1.0e-4
+    @test SunMars.T ≈ 109.3425420965616u"d"                             rtol = 1.0e-4
+    @test L[1][1] ≈ (1 - SunMars.μ) + (-1.082385474e6u"km" / SunMars.L) rtol = 1.0e-4  # (with respect to Mars)
+    @test SunMars.e ≈ 0.0935643512                                      rtol = 1.0e-4
 
     # XXX: These values as listed in [DeiTos2018] are possibly wrong?
     #@test SunMars.μ ≈ 3.227154876045166e-6      rtol=1e-4

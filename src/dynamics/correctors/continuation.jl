@@ -1,11 +1,11 @@
 export continuation_simple
 
-function continuation_simple(state::State; x_perturbation=1e-2, ops=(:zero, :+, :-), dc_tolerance=1e-3, verbose=true, kwargs...)
+function continuation_simple(state::State; x_perturbation = 1.0e-2, ops = (:zero, :+, :-), dc_tolerance = 1.0e-3, verbose = true, kwargs...)
     # NOTE: Only designed for DiffCorrectAxisymmetric!
     corrector = DiffCorrectAxisymmetric()
 
     # Try to do a simple continuation from sols
-    sols = Dict{Symbol,Vector{Trajectory}}(:zero => [], :+ => [], :- => [])
+    sols = Dict{Symbol, Vector{Trajectory}}(:zero => [], :+ => [], :- => [])
     orig_state = deepcopy(state)
 
     # Properties
@@ -22,7 +22,7 @@ function continuation_simple(state::State; x_perturbation=1e-2, ops=(:zero, :+, 
     try
         for id in ops
             op = getfield(Base, id)
-            p = ProgressThresh(id == :+ ? max_x : min_x; desc="Continuing orbits along $(op):", enabled=verbose)
+            p = ProgressThresh(id == :+ ? max_x : min_x; desc = "Continuing orbits along $(op):", enabled = verbose)
             last_state = orig_state
             while true
                 # Build a new solution by perturbing the last solution
@@ -69,7 +69,7 @@ function continuation_simple(state::State; x_perturbation=1e-2, ops=(:zero, :+, 
     end
 
     new_sols = vcat(values(sols)...)  # Concatenate all solutions
-    sort!(new_sols, by=x -> x.prob.u0[1])  # Sort solutions by X value
+    sort!(new_sols, by = x -> x.prob.u0[1])  # Sort solutions by X value
 
     return new_sols
 end

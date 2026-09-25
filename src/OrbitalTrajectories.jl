@@ -1,17 +1,17 @@
 module OrbitalTrajectories
 
-    using Reexport
+using Reexport
 
-    #----------#
-    # INCLUDES #
-    #----------#
-    include("SPICE/spice.jl")
-    include("dynamics/dynamics.jl")
+#----------#
+# INCLUDES #
+#----------#
+include("SPICE/spice.jl")
+include("dynamics/dynamics.jl")
 
-    #----------------#
-    # IMPORT MODULES #
-    #----------------#
-    @reexport using OrbitalTrajectories.Dynamics
-    @reexport using OrbitalTrajectories.SpiceUtils
+#----------------#
+# IMPORT MODULES #
+#----------------#
+@reexport using OrbitalTrajectories.Dynamics
+@reexport using OrbitalTrajectories.SpiceUtils
 
 end # module

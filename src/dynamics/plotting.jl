@@ -4,7 +4,7 @@ circle(x, y, r) = ellipse_by_eccentricity(x, y, a = r, e = 0)
 # Define an ellipse with: semi-major axis a, eccentricity e
 ellipse_by_eccentricity(x, y; a, e) = ellipse_by_axis(x, y, a = a, b = √(a^2 * (1 - e^2)))
 
-function ellipse_by_axis(x, y; a, b, num=500)
+function ellipse_by_axis(x, y; a, b, num = 500)
     # Define an ellipse with:
     #   semi-major axis a
     #   semi-minor axis b
@@ -12,7 +12,7 @@ function ellipse_by_axis(x, y; a, b, num=500)
     return @. (x + a * cos(θ), y + b * sin(θ))
 end
 
-function get_x_y(model::M) where { M <: Abstract_DynamicalModel }
+function get_x_y(model::M) where {M <: Abstract_DynamicalModel}
     us = unknowns(model.ode)
     x = findfirst(isequal(model.x), us)
     y = findfirst(isequal(model.y), us)
@@ -32,7 +32,7 @@ function xyz_to_idx(_, var::Symbol)
     end
 end
 
-function xyz_to_idx(model::M, var::Num) where { M <: Abstract_DynamicalModel }
+function xyz_to_idx(model::M, var::Num) where {M <: Abstract_DynamicalModel}
     if var == model.x
         return 1
     elseif var == model.y
@@ -124,13 +124,13 @@ end
         xlim, ylim = get_margin_lims(traj, plotattributes)
         xlims --> xlim
         ylims --> ylim
-        
+
         # Formatting
         arrow --> true
         dpi --> 150
         size --> (400, 500)
         legend --> false
-        xaxis --> (rotation=45)
+        xaxis --> (rotation = 45)
         aspect_ratio --> 1
         ticks --> false
     end
@@ -146,7 +146,7 @@ end
     denseplot = get(plotattributes, :denseplot, true)
     plotdensity = get(plotattributes, :plotdensity, 1000)
 
-    tspan = ForwardDiff.value.(denseplot ? range(sol.t[begin], sol.t[end], length=plotdensity) : sol.t)
+    tspan = ForwardDiff.value.(denseplot ? range(sol.t[begin], sol.t[end], length = plotdensity) : sol.t)
     tspan_norm = @. (tspan - tspan[begin]) / (tspan[end] - tspan[begin])
     u_vals = sol.(tspan)
 
@@ -159,8 +159,8 @@ end
         end
     elseif trace_stability
         stability_indices = norm.(extract_stability(u_vals))'
-        sorted_indices = hcat(map(sort, eachslice(stability_indices, dims=1))...)[4:6,:]'
-        max_eigenvalues = map(maximum, eachslice(sorted_indices, dims=1))
+        sorted_indices = hcat(map(sort, eachslice(stability_indices, dims = 1))...)[4:6, :]'
+        max_eigenvalues = map(maximum, eachslice(sorted_indices, dims = 1))
         @series begin
             label --> ""
             legend --> false
@@ -195,9 +195,11 @@ end
         line_z := nothing
 
         primary_pos = (-circ_props.μ, 0.0, 0.0)
-        ellipse_by_axis(primary_pos[idx1], primary_pos[idx2];
-                        a = ustrip(circ_props.R1[idx1] / circ_props.L),
-                        b = ustrip(circ_props.R1[idx2] / circ_props.L))
+        ellipse_by_axis(
+            primary_pos[idx1], primary_pos[idx2];
+            a = ustrip(circ_props.R1[idx1] / circ_props.L),
+            b = ustrip(circ_props.R1[idx2] / circ_props.L)
+        )
     end
 
     @series begin
@@ -208,10 +210,12 @@ end
         label := nolabels ? "" : titlecase(String(secondary_body(model)))
         line_z := nothing
 
-        secondary_pos = (1 - circ_props.μ, 0., 0.)
-        ellipse_by_axis(secondary_pos[idx1], secondary_pos[idx2];
-                        a = ustrip(circ_props.R2[idx1] / circ_props.L),
-                        b = ustrip(circ_props.R2[idx2] / circ_props.L))
+        secondary_pos = (1 - circ_props.μ, 0.0, 0.0)
+        ellipse_by_axis(
+            secondary_pos[idx1], secondary_pos[idx2];
+            a = ustrip(circ_props.R2[idx1] / circ_props.L),
+            b = ustrip(circ_props.R2[idx2] / circ_props.L)
+        )
     end
 
     @series begin
@@ -279,13 +283,13 @@ end
 end
 
 function get_margin_lims(sol::Trajectory, plotattributes)
-    margins = get(plotattributes, :padding, 0.10)
+    margins = get(plotattributes, :padding, 0.1)
     a, b = get(plotattributes, :idxs, get_x_y(sol.model))
     a = xyz_to_idx(sol.model, a)
     b = xyz_to_idx(sol.model, b)
 
     # Work out the maximum extent of the orbit
-    x, y = (ForwardDiff.value.(sol.sol[a,:]), ForwardDiff.value.(sol.sol[b,:]))
+    x, y = (ForwardDiff.value.(sol.sol[a, :]), ForwardDiff.value.(sol.sol[b, :]))
     xlim = (minimum(x), maximum(x))
     ylim = (minimum(y), maximum(y))
 

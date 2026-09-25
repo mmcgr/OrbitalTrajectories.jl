@@ -6,7 +6,7 @@ export collision, check_distance, crashed
 # ORBITAL PROBLEMS #
 #------------------#
 
-function _unknowns_default_ordering(model::M) where M<:Abstract_DynamicalModel
+function _unknowns_default_ordering(model::M) where {M <: Abstract_DynamicalModel}
     iv = independent_variable(model.ode.ode_system)
     D = Differential(iv)
 
@@ -16,7 +16,7 @@ end
 
 # Generate a map from expected unknowns using an initial state array.
 # The input u0 is expected to be in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
-function u0_map(model::M, u0::AbstractArray{Float64}) where M<:Abstract_DynamicalModel
+function u0_map(model::M, u0::AbstractArray{Float64}) where {M <: Abstract_DynamicalModel}
     us = _unknowns_default_ordering(model)
     d = Dict{Num, Float64}(@. (us .=> u0))
 
@@ -26,16 +26,16 @@ function u0_map(model::M, u0::AbstractArray{Float64}) where M<:Abstract_Dynamica
 end
 
 struct State{
-    M<:Abstract_DynamicalModel,
-    F<:Abstract_ReferenceFrame,
-    uType,
-    tType,
-    isinplace,
-    O<:SciMLBase.AbstractODEProblem{uType, tType, isinplace}
-} <: SciMLBase.AbstractODEProblem{uType, tType, isinplace}
-    model :: M
-    frame :: F  # Reference frame that the problem's u0 is defined in
-    prob :: O
+        M <: Abstract_DynamicalModel,
+        F <: Abstract_ReferenceFrame,
+        uType,
+        tType,
+        isinplace,
+        O <: SciMLBase.AbstractODEProblem{uType, tType, isinplace},
+    } <: SciMLBase.AbstractODEProblem{uType, tType, isinplace}
+    model::M
+    frame::F  # Reference frame that the problem's u0 is defined in
+    prob::O
 end
 
 State(model::Abstract_DynamicalModel, u0::AbstractArray, tspan) = State(model, default_reference_frame(model), u0, tspan)
@@ -48,10 +48,17 @@ State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, 
 State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, d::Dict{Num, Float64}, tspan) =
     State(model, reference_frame, ODEProblem(model.ode.ode_system, d, tspan))
 
-struct Trajectory{M<:Abstract_DynamicalModel,F<:Abstract_ReferenceFrame,T,N,A,O<:SciMLBase.AbstractTimeseriesSolution{T,N,A},} <: SciMLBase.AbstractTimeseriesSolution{T,N,A}
-    model :: M
-    frame :: F  # Reference frame that the solution is defined in
-    sol :: O
+struct Trajectory{
+        M <: Abstract_DynamicalModel,
+        F <: Abstract_ReferenceFrame,
+        T,
+        N,
+        A,
+        O <: SciMLBase.AbstractTimeseriesSolution{T, N, A},
+    } <: SciMLBase.AbstractTimeseriesSolution{T, N, A}
+    model::M
+    frame::F  # Reference frame that the solution is defined in
+    sol::O
 end
 
 State(traj::Trajectory) = State(traj.model, traj.frame, traj.sol.prob)
@@ -65,13 +72,13 @@ SciMLBase.remake(state::State; model = state.model, frame = state.frame, kwargs.
     State(model, frame, remake(state.prob; kwargs...))
 ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.model)
 
-function _expected_vars(model::M) where M<:Abstract_DynamicalModel
+function _expected_vars(model::M) where {M <: Abstract_DynamicalModel}
     sys = model.ode.ode_system
     return [sys.x, sys.y, sys.z, sys.xˍf, sys.yˍf, sys.zˍf]
 end
-function _model_ordering(model::M) where M<:Abstract_DynamicalModel
+function _model_ordering(model::M) where {M <: Abstract_DynamicalModel}
     expected_us = _expected_vars(model)
-    return [findfirst(uu->isequal(u, uu), unknowns(model.ode.ode_system)) for u in expected_us]
+    return [findfirst(uu -> isequal(u, uu), unknowns(model.ode.ode_system)) for u in expected_us]
 end
 
 # Given a state and a state array u0 ordered by the states uknowns, return u0 ordered by
@@ -83,8 +90,8 @@ order_u0!(state::State, u0::AbstractArray) = order_u0!(state.model, u0)
 # [x, y, z, Dx(x), Dx(y), Dx(z)]
 invorder_u0!(state::State, u0::AbstractArray) = invorder_u0!(state.model, u0)
 
-order_u0(model::M, u0::AbstractArray) where {M<:Abstract_DynamicalModel} = u0[_model_ordering(model)]
-order_u0!(model::M, u0::AbstractArray) where {M<:Abstract_DynamicalModel} = u0 .= u0[_model_ordering(model)]
+order_u0(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = u0[_model_ordering(model)]
+order_u0!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = u0 .= u0[_model_ordering(model)]
 
 invorder_u0!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = invpermute!(u0, _model_ordering(model))
 
@@ -98,7 +105,7 @@ ordered_u0(state::State) = order_u0(state, state.u0)
 # Interpolation
 (traj::Trajectory)(t::Number) = State(traj.model, traj.frame, traj.sol(t), (t, t))
 function (traj::Trajectory)(t::AbstractArray{<:Number})
-    new_sol = SciMLBase.build_solution(traj.prob, traj.alg, t, traj.sol(t); interp=traj.interp, retcode=traj.retcode)
+    new_sol = SciMLBase.build_solution(traj.prob, traj.alg, t, traj.sol(t); interp = traj.interp, retcode = traj.retcode)
     return Trajectory(traj.model, traj.frame, new_sol)
 end
 
@@ -141,19 +148,25 @@ Base.summary(state::State) = string(
     SciMLBase.TYPE_COLOR, state.frame, "\n",
     "    ", SciMLBase.NO_COLOR, "Underlying ", summary(state.prob), "\n",
     "    ", SciMLBase.NO_COLOR, "tspan = ", state.prob.tspan, "\n",
-    "    u0    = ", state.prob.u0)
+    "    u0    = ", state.prob.u0
+)
 Base.show(io::IO, _::MIME"text/plain", A::Trajectory) = show(io, A) # XXX: Required because also defined in SciMLBase
 function Base.show(io::IO, A::Trajectory)
-    println(io, string(
-        SciMLBase.TYPE_COLOR, nameof(typeof(A)), SciMLBase.NO_COLOR, " in ",
-        SciMLBase.TYPE_COLOR, A.model, SciMLBase.NO_COLOR, " in ",
-        SciMLBase.TYPE_COLOR, A.frame, SciMLBase.NO_COLOR))
-    println(io, string(
-        "    retcode  = $(A.retcode) [$(length(A.t)) timesteps]\n",
-        "    t        = ($(A.t[begin]), $(A.t[end]))\n",
-        "    u[begin] = $(A.u[begin])\n",
-        "    u[end]   = $(A.u[end])\n"
-    ))
+    println(
+        io, string(
+            SciMLBase.TYPE_COLOR, nameof(typeof(A)), SciMLBase.NO_COLOR, " in ",
+            SciMLBase.TYPE_COLOR, A.model, SciMLBase.NO_COLOR, " in ",
+            SciMLBase.TYPE_COLOR, A.frame, SciMLBase.NO_COLOR
+        )
+    )
+    return println(
+        io, string(
+            "    retcode  = $(A.retcode) [$(length(A.t)) timesteps]\n",
+            "    t        = ($(A.t[begin]), $(A.t[end]))\n",
+            "    u[begin] = $(A.u[begin])\n",
+            "    u[end]   = $(A.u[end])\n"
+        )
+    )
 end
 
 #-------#
@@ -162,26 +175,28 @@ end
 
 const DEFAULT_ALG = Vern7();
 
-function SciMLBase.solve(state::State, alg::OrdinaryDiffEqAlgorithm=DEFAULT_ALG; reltol=1e-10, abstol=1e-10, kwargs...)
+function SciMLBase.solve(
+        state::State,
+        alg::OrdinaryDiffEqAlgorithm = DEFAULT_ALG;
+        reltol = 1.0e-10,
+        abstol = 1.0e-10,
+        kwargs...
+    )
     return SciMLBase.__solve(state, alg; reltol, abstol, kwargs...)
 end
 
 # The __solve() method does the actual heavy lifting, including converting to a Trajectory.
-function SciMLBase.__solve(state::State, alg::OrdinaryDiffEqAlgorithm=DEFAULT_ALG; reltol=1e-10, abstol=1e-10, userdata=Dict(), callback=nothing, kwargs...)
+function SciMLBase.__solve(
+        state::State,
+        alg::OrdinaryDiffEqAlgorithm = DEFAULT_ALG;
+        reltol = 1.0e-10,
+        abstol = 1.0e-10,
+        kwargs...
+    )
     default_frame = default_reference_frame(state.model)
     real_state = convert_to_frame(state, default_frame)
 
-    # Pass the default state into the underlying solver
-    # TODO: Remove the need for this in DiffCorrectAxisymmetric
-    # TODO: Removed to avoid deprecation warning in SciMLBase.solve()
-    #  - buuut presumably DiffCorrectAxisymmetric is now sad
-    # userdata = deepcopy(userdata)
-    # userdata[:real_state] = real_state
-
-    # Copy the callbacks (for thread-safety)
-    callback = deepcopy(callback)
-
     # Call the underlying solver
-    raw_sol = solve(real_state.prob, alg; reltol, abstol, callback, kwargs...)
+    raw_sol = solve(real_state.prob, alg; reltol, abstol, kwargs...)
     return Trajectory(state.model, default_frame, raw_sol)
 end

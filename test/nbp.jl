@@ -8,7 +8,7 @@ using DifferentialEquations
 @testset "convert_to_frame" begin
     u0 = [0.8574053516112442, 0.0, 0.0, 0.0, 0.47, 0.0]
     system_nbp = EphemerisNBP(:earth, :moon)
-    prob = State(system_nbp, SynodicFrame(), u0, (0., 3600.0*24*30))
+    prob = State(system_nbp, SynodicFrame(), u0, (0.0, 3600.0 * 24 * 30))
 
     # Test that converting to and from inertial frames works
     inert_prob = convert_to_frame(prob, InertialFrame())

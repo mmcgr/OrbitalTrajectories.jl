@@ -9,34 +9,36 @@ const FD = Val(:FiniteDiff)
 const VE = Val(:VariationalEquations)
 
 @traitdef HasVE{X}
+# runic: off
 @traitimpl HasVE{X} <- has_variational_equations(X)
+# runic: on
 has_variational_equations(X::Type{<:Abstract_ModelODEFunctions}) = hasfield(X, :ode_stm_f)
 has_variational_equations(X::Type{<:Abstract_DynamicalModel}) = has_variational_equations(fieldtype(X, :ode))
 has_variational_equations(X::Type{<:State}) = has_variational_equations(fieldtype(X, :model))
 
 @doc """ Sensitivity of the final state with respect to initial state. """
 sensitivity(m::Module, args...; kwargs...) = sensitivity(Val(first(fullname(m))), args...; kwargs...)
-function sensitivity(::Val{:ForwardDiff}, state, desired_frame=state.frame, alg=DEFAULT_ALG; kwargs...)
-    ForwardDiff.jacobian(state.u0) do u0
-        new_state = remake(state, u0=u0)
+function sensitivity(::Val{:ForwardDiff}, state, desired_frame = state.frame, alg = DEFAULT_ALG; kwargs...)
+    return ForwardDiff.jacobian(state.u0) do u0
+        new_state = remake(state, u0 = u0)
         return convert_to_frame(solve(new_state, alg; kwargs...), desired_frame).sol[:, end]
     end
 end
-function sensitivity(::Val{:FiniteDiff}, state, desired_frame=state.frame, alg=DEFAULT_ALG; kwargs...)
-    FiniteDiff.finite_difference_jacobian(state.u0) do u0
-        new_state = remake(state, u0=u0)
+function sensitivity(::Val{:FiniteDiff}, state, desired_frame = state.frame, alg = DEFAULT_ALG; kwargs...)
+    return FiniteDiff.finite_difference_jacobian(state.u0) do u0
+        new_state = remake(state, u0 = u0)
         return convert_to_frame(solve(new_state, alg; kwargs...), desired_frame).sol[:, end]
     end
 end
 function sensitivity(v::Val{:VariationalEquations}, state, args...; kwargs...)
     STM_VE = sensitivity_trace(v, state, args...; kwargs...).sol[:, end]
     dim = length(state.u0)
-    return reshape(STM_VE[dim+1:end], (dim, dim))
+    return reshape(STM_VE[(dim + 1):end], (dim, dim))
 end
 
 @doc """ Sensitivity of the full propagated trajectory with respect to initial state. """
 sensitivity_trace(m::Module, args...; kwargs...) = sensitivity_trace(Val(first(fullname(m))), args...; kwargs...)
-function sensitivity_trace(::Val{:ForwardDiff}, state::State, desired_frame=state.frame, alg=DEFAULT_ALG; trace_time=false, kwargs...)
+function sensitivity_trace(::Val{:ForwardDiff}, state::State, desired_frame = state.frame, alg = DEFAULT_ALG; trace_time = false, kwargs...)
     u0 = state.u0
     values = trace_time ? [u0..., state.tspan[end] - state.tspan[begin]] : u0
 
@@ -54,7 +56,7 @@ function sensitivity_trace(::Val{:ForwardDiff}, state::State, desired_frame=stat
     new_sol = convert_to_frame(sol, desired_frame)
     return new_sol
 end
-@traitfn function sensitivity_trace(::Val{:VariationalEquations}, state::S, desired_frame=state.frame, alg=DEFAULT_ALG; kwargs...) where {S; HasVE{S}}
+@traitfn function sensitivity_trace(::Val{:VariationalEquations}, state::S, desired_frame = state.frame, alg = DEFAULT_ALG; kwargs...) where {{S; HasVE{S}}}
     dim = length(state.u0)
     I_flat = reshape(Matrix{Float64}(I, dim, dim), dim^2)
     u0_STM = MVector{dim^2 + dim}(vcat(state.u0, I_flat))
@@ -67,7 +69,7 @@ end
 
 @doc """ Sensitivity of the state at time t with respect to initial state. """
 function sensitivity(sol::Trajectory, t)
-    extract_STMs(sol, t)
+    return extract_STMs(sol, t)
 end
 
 @doc """ Sensitivity of the state at time t2 with respect to the state at time t1 <= t2. """
@@ -83,17 +85,17 @@ end
 # TODO: Better functions for extracting STMs and stability index from Dual numbers
 # TODO: Use ForwardDiff.extract_jacobian
 function extract_STMs(sol::Trajectory, t)
-    extract_STMs(sol(t))
+    return extract_STMs(sol(t))
 end
 function extract_STMs(sol::Trajectory)
-    extract_STMs(sol.u)
+    return extract_STMs(sol.u)
 end
 function extract_STMs(state::State)
-    extract_STMs([state.u0])[1]
+    return extract_STMs([state.u0])[1]
 end
 function extract_STMs(u)
-    [hcat([Array(t.partials) for t in ut]...)' for ut in u]
+    return [hcat([Array(t.partials) for t in ut]...)' for ut in u]
 end
 function extract_stability(u)
-    hcat(eigvals.(extract_STMs(u))...)
+    return hcat(eigvals.(extract_STMs(u))...)
 end

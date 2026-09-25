@@ -7,32 +7,20 @@ using Symbolics
 # wrap_code: perform common substring elimination to improve performance of the resulting models.
 @doc """Generic constructor for a DynamicalModel's underlying ODEFunctions."""
 function (T::Type{<:Abstract_ModelODEFunctions})(args...; kwargs...)
-    # TODO: Is the @mtkcompile version equivalent to the original?
-    # _ode = System(T, args...; kwargs...)
-
-    # # Reduce high-order system to 1st-order (re-ordering to keep the original equations first)
-    # # NOTE: need to expand the RHS derivatives before calling order-lowering
-    # eqs = expand_derivatives.(equations(_ode))
-    # num_orig_eqs = length(eqs)
-    # eqs, dvs = ode_order_lowering(eqs, independent_variable(_ode), ModelingToolkit.states(_ode)) 
-    # eqs = [eqs[end - num_orig_eqs + 1:end]..., eqs[1:num_orig_eqs]...]
-    # dvs = [dvs[end - num_orig_eqs + 1:end]..., dvs[1:num_orig_eqs]...]
-    # ode = System(simplify.(eqs), independent_variable(_ode), dvs, parameters(_ode))
-
     @mtkcompile ode = System(T, args...; kwargs...)
 
     # Generate the functions
     # TODO: Add support for tgrad (need to define derivative(get_pos) for EphemerisNBP)
-    ode_f = ODEFunction(ode; jac=true, tgrad=false, eval_expression=false, eval_module=@__MODULE__)
+    ode_f = ODEFunction(ode; jac = true, tgrad = false, eval_expression = false, eval_module = @__MODULE__)
     ode_stm_f = STM_ODEFunction(ode, ode_f)
-    T(ode, ode_f, ode_stm_f)
+    return T(ode, ode_f, ode_stm_f)
 end
 
 @doc """Generic model function."""
 (model::Abstract_DynamicalModel)(args...; kwargs...) = model.ode.ode_f(args...; kwargs...)
 
 @traitdef HasJacobian{X}
-@traitimpl HasJacobian{X} <- has_jacobian(X)
+@traitimpl HasJacobian{X} < - has_jacobian(X)
 has_jacobian(X::Type{<:SciMLBase.ODEFunction}) = !isnothing(fieldtype(X, :jac))
 
 @doc """
@@ -45,13 +33,13 @@ has_jacobian(X::Type{<:SciMLBase.ODEFunction}) = !isnothing(fieldtype(X, :jac))
     # TODO: Memoize this function! It's very slightly slow for EphemerisNBP
 
     # Convert Variable -> Operation
-    iv  = independent_variable(ode)
+    iv = independent_variable(ode)
     dvs = unknowns(ode)
     params = parameters(ode)
 
     # NOTE: Depends on the Jacobian, corresponding to A(t) matrix (for the
     # State Transition Matrix) [Parker & Anderson 2014].
-    @variables   ϕ(iv)[1:length(dvs),1:length(dvs)]
+    @variables ϕ(iv)[1:length(dvs), 1:length(dvs)]
     D = Differential(iv)
 
     # Get the Jacobian matrix (A(t))
@@ -68,8 +56,9 @@ has_jacobian(X::Type{<:SciMLBase.ODEFunction}) = !isnothing(fieldtype(X, :jac))
         iv,
         [dvs..., ϕ...],  # Append the STM and motion state variables
         params;
-        name = :stm_ode)
-    stm_f = ODEFunction(stm_ode; sparse=true, eval_expression=false, eval_module=@__MODULE__, kwargs...)
+        name = :stm_ode
+    )
+    stm_f = ODEFunction(stm_ode; sparse = true, eval_expression = false, eval_module = @__MODULE__, kwargs...)
     return stm_f
 end
 
@@ -82,13 +71,13 @@ Base.show(io::IO, x::Abstract_ModelODEFunctions) = print(io, nameof(x))
 ModelingToolkit.varmap_to_vars(model::Abstract_DynamicalModel, varmap) = ModelingToolkit.varmap_to_vars(varmap, parameters(model))
 SciMLBase.isinplace(::Abstract_DynamicalModel) = true
 SciMLBase.isinplace(f::Abstract_DynamicalModel, _) = isinplace(f)
-function Base.getproperty(x::M, b::Symbol) where M<:Abstract_DynamicalModel
+function Base.getproperty(x::M, b::Symbol) where {M <: Abstract_DynamicalModel}
     if hasfield(M, b)
         return getfield(x, b)
     end
     return getproperty(x.ode, b)
 end
-function Base.getproperty(x::F, b::Symbol) where F<:Abstract_ModelODEFunctions
+function Base.getproperty(x::F, b::Symbol) where {F <: Abstract_ModelODEFunctions}
     if hasfield(F, b)
         return getfield(x, b)
     end
@@ -101,7 +90,7 @@ ModelingToolkit.get_unknowns(f::Abstract_ModelODEFunctions) = ModelingToolkit.ge
 ModelingToolkit.get_ps(f::Abstract_ModelODEFunctions) = ModelingToolkit.get_ps(f.ode_system)
 Base.nameof(f::Abstract_ModelODEFunctions) = nameof(typeof(f))
 
-function parameter_map(model::M) where M<:Abstract_DynamicalModel
+function parameter_map(model::M) where {M <: Abstract_DynamicalModel}
     d = Dict{Num, Float64}()
     for p in parameters(model.ode)
         s = Symbol(p)

@@ -7,31 +7,33 @@ using Test
 
 # Values taken from Table 1 of [Pellegrini 2016, On the Computation and Accuracy of Trajectory State Transition Matrices]
 # The u0 from the paper is given relative to secondary body. Here it has been converted to primary body
-test_cases = [(
-    system = (:Jupiter, :Europa),
-    u0     = [0.8982275190401223, 0.0, 0.0, 0.0, -0.01806028472285857, 0.0],
-    μ      = 2.528009215182033e-5,
-    tspan = (0.0, 25.13898226959327),
-    λ_max  = 2.468621114047195,
-), (
-    system = (:Jupiter, :Europa),
-    u0     = [1.0486505808029702, 0.0, 0.0, 0.0, -0.09354853663949217, 0.0],
-    μ      = 2.528009215182033e-5,
-    tspan  = (0.0, 70.53945041512506),
-    λ_max  = 2.804814246519340e7,
-), (
-    system = (:Earth, :Moon),
-    u0     = [0.974785880885315, 0.0, 0.07129515195874, 0.0, -0.526306975588415, 0.0],
-    μ      = 0.01215509906405700,
-    tspan  = (0.0, 2.517727406553485),
-    λ_max  = 17.632688124231755,
-)]
+test_cases = [
+    (
+        system = (:Jupiter, :Europa),
+        u0 = [0.8982275190401223, 0.0, 0.0, 0.0, -0.01806028472285857, 0.0],
+        μ = 2.528009215182033e-5,
+        tspan = (0.0, 25.13898226959327),
+        λ_max = 2.468621114047195,
+    ), (
+        system = (:Jupiter, :Europa),
+        u0 = [1.0486505808029702, 0.0, 0.0, 0.0, -0.09354853663949217, 0.0],
+        μ = 2.528009215182033e-5,
+        tspan = (0.0, 70.53945041512506),
+        λ_max = 2.80481424651934e7,
+    ), (
+        system = (:Earth, :Moon),
+        u0 = [0.974785880885315, 0.0, 0.07129515195874, 0.0, -0.526306975588415, 0.0],
+        μ = 0.012155099064057,
+        tspan = (0.0, 2.517727406553485),
+        λ_max = 17.632688124231755,
+    ),
+]
 
 @testset "CR3BP" begin
     for case in test_cases
-        cr3bp = CR3BP(case.system...; μ=case.μ)
+        cr3bp = CR3BP(case.system...; μ = case.μ)
         state = State(cr3bp, SynodicFrame(false), case.u0, case.tspan)
-	
+
         @test case.u0 ≈ ordered_u0(state)
 
         state1 = convert_to_frame(state, SynodicFrame(false))
@@ -50,9 +52,9 @@ end
 
 @testset "ER3BP" begin
     for case in test_cases
-        er3bp = ER3BP(case.system...; μ=case.μ)
+        er3bp = ER3BP(case.system...; μ = case.μ)
         state = State(er3bp, SynodicFrame(false), case.u0, case.tspan)
-	
+
         @test case.u0 ≈ ordered_u0(state)
 
         state1 = convert_to_frame(state, SynodicFrame(false))
@@ -75,7 +77,7 @@ end
         tspan_epoch = ustrip.(u"s", case.tspan .* R3BPSystemProperties(case.system...).T)
         eph = EphemerisNBP(case.system..., :Sun)
         state = State(eph, SynodicFrame(false), case.u0, tspan_epoch)
-	
+
         @test case.u0 ≈ ordered_u0(state)
 
         state1 = convert_to_frame(state, SynodicFrame(false))
@@ -109,18 +111,18 @@ end
 
     for (i, pos) in positions
         expected_u0 = order_u0!(traj.model, copy(pos))
-        @test traj_st.sol[:,i] ≈ expected_u0 atol=1e-4
+        @test traj_st.sol[:, i] ≈ expected_u0 atol = 1.0e-4
     end
 
     traj_i = convert_to_frame(traj, InertialFrame())
     positions = [
         (1, [0.8982275190401223, 0.0, 0.0, 0.0, 0.8801672343172637, 0.0]),
         (2, [0.8979066002253975, 0.02007199582183506, 0.0, -0.028141407045196427, 0.8798528577714169, 0.0]),
-        (20, [-0.019070893263767097, 0.6214020564363437, 0.0, -1.259320136610032, -0.41926726731292824, 0.0])
+        (20, [-0.019070893263767097, 0.6214020564363437, 0.0, -1.259320136610032, -0.41926726731292824, 0.0]),
     ]
 
     for (i, expected_u0) in positions
-        @test traj_i.sol[:,i] ≈ expected_u0 atol=1e-4
+        @test traj_i.sol[:, i] ≈ expected_u0 atol = 1.0e-4
     end
 end
 
@@ -142,7 +144,7 @@ end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)
         convert_u!(actual_newu0, t, traj, InertialFrame())
-        @test expected_newu0 ≈ actual_newu0 atol=1e-4
+        @test expected_newu0 ≈ actual_newu0 atol = 1.0e-4
     end
 end
 
@@ -164,7 +166,7 @@ end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)
         convert_u!(actual_newu0, t, traj, InertialFrame())
-        @test expected_newu0 ≈ actual_newu0 atol=1e-4
+        @test expected_newu0 ≈ actual_newu0 atol = 1.0e-4
     end
 end
 
@@ -186,6 +188,6 @@ end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)
         convert_u!(actual_newu0, t, traj, SynodicFrame())
-        @test expected_newu0 ≈ actual_newu0 atol=1e-4
+        @test expected_newu0 ≈ actual_newu0 atol = 1.0e-4
     end
 end

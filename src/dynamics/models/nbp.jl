@@ -5,11 +5,11 @@ export get_state
 # N-BODY SYSTEMS #
 #----------------#
 struct NBPSystemProperties{N}
-    center :: Symbol
-    center_id :: Integer
-    bodies :: SVector{N, Symbol}
-    body_ids :: SVector{N, <: Integer}
-    μ :: SVector{N, <: Real}
+    center::Symbol
+    center_id::Integer
+    bodies::SVector{N, Symbol}
+    body_ids::SVector{N, <:Integer}
+    μ::SVector{N, <:Real}
 end
 
 function NBPSystemProperties(center::Symbol, bodies::Vararg{Symbol})
@@ -20,7 +20,7 @@ function NBPSystemProperties(center::Symbol, bodies::Vararg{Symbol})
     center_id = bodn2c(String(center))
     body_ids = @. bodn2c(String(bodies))
     μ = SpiceUtils.get_GM.(body_ids)
-    NBPSystemProperties(center, center_id, bodies, body_ids, μ)
+    return NBPSystemProperties(center, center_id, bodies, body_ids, μ)
 end
 
 Base.show(io::IO, x::NBPSystemProperties) = print(io, "($(x.center), acc=$(x.bodies))")
@@ -28,10 +28,10 @@ Base.show(io::IO, x::NBPSystemProperties) = print(io, "($(x.center), acc=$(x.bod
 #-----------------------------------#
 # EPHEMERIS-NBP EQUATIONS OF MOTION #
 #-----------------------------------#
-struct _NBP_ODEFunctions{S,F,F2} <: Abstract_ModelODEFunctions
-    ode_system :: S
-    ode_f      :: F
-    ode_stm_f  :: F2
+struct _NBP_ODEFunctions{S, F, F2} <: Abstract_ModelODEFunctions
+    ode_system::S
+    ode_f::F
+    ode_stm_f::F2
 end
 
 # NB: Need the parameter name "T" in place for @memoize to work
@@ -50,7 +50,7 @@ end
 
         # Get the position of the body
         if body == props.center
-            body_pos = [0., 0., 0.]
+            body_pos = [0.0, 0.0, 0.0]
         else
             # Add the non-inertial center's acceleration (i.e. center is also pulled by this body) [?]
             # NOTE: the body and center need to be converted to Num{String} for the @registered function to work.
@@ -73,11 +73,13 @@ end
     # TODO: Is it the sum for each component of the acceleration vector (the sum of a single value),
     #       or should it be the sum of the vector itself?
 
-    eqs = expand_derivatives.([
-        D2(x) ~ sum(accelerations[1]),
-        D2(y) ~ sum(accelerations[2]),
-        D2(z) ~ sum(accelerations[3]),
-    ])
+    eqs = expand_derivatives.(
+        [
+            D2(x) ~ sum(accelerations[1]),
+            D2(y) ~ sum(accelerations[2]),
+            D2(z) ~ sum(accelerations[3]),
+        ]
+    )
     # Build the 2nd-order ODE props
     return System(eqs, t, full_pos, []; name)
 end
@@ -85,21 +87,21 @@ end
 #---------------------#
 # EPHEMERIS-NBP MODEL #
 #---------------------#
-struct EphemerisNBP{O<:_NBP_ODEFunctions,P<:NBPSystemProperties} <: Abstract_DynamicalModel
-    ode   :: O
-    props :: P
+struct EphemerisNBP{O <: _NBP_ODEFunctions, P <: NBPSystemProperties} <: Abstract_DynamicalModel
+    ode::O
+    props::P
 end
-function EphemerisNBP(bodies::Vararg{Symbol}; center=nothing, kwargs...)
+function EphemerisNBP(bodies::Vararg{Symbol}; center = nothing, kwargs...)
     (!isnothing(center) && isnothing(bodn2c(center)) || center ∈ bodies) && error("Unsupported center (must not be specified in bodies)")
     all_bodies = isnothing(center) ? (bodies[1], bodies...) : (center, bodies...)
     bodies_symbols = @. Symbol(lowercase(String(all_bodies)))
     props = NBPSystemProperties(bodies_symbols...)
     o::_NBP_ODEFunctions = _NBP_ODEFunctions(props; kwargs...)
-    EphemerisNBP(o, props)
+    return EphemerisNBP(o, props)
 end
 
 Base.show(io::IO, x::EphemerisNBP) = print(io, "$(nameof(typeof(x)))$(x.props)")
-ModelingToolkit.parameters(::EphemerisNBP) = SVector{0,Float64}()
+ModelingToolkit.parameters(::EphemerisNBP) = SVector{0, Float64}()
 function _expected_vars(sys::EphemerisNBP)
     sys = sys.ode.ode_system
     return [sys.x, sys.y, sys.z, sys.xˍt, sys.yˍt, sys.zˍt]
@@ -122,8 +124,8 @@ secondary_body(m::EphemerisNBP) = m.props.bodies[2]
 # Convert a State to a State in a different reference frame.
 
 # No conversion needed if the state is already in the desired frame
-convert_to_frame(state::State{<:EphemerisNBP,F}, ::F) where {F<:Abstract_ReferenceFrame} = state
-function convert_to_frame(state::State{<:EphemerisNBP,<:Abstract_ReferenceFrame}, frame::Abstract_ReferenceFrame)
+convert_to_frame(state::State{<:EphemerisNBP, F}, ::F) where {F <: Abstract_ReferenceFrame} = state
+function convert_to_frame(state::State{<:EphemerisNBP, <:Abstract_ReferenceFrame}, frame::Abstract_ReferenceFrame)
     # Get the synodic initial state of the secondary body
     # TODO: Fix up the SpiceUtils interface so the arguments are more consistently ordered.
     to_synodic = SpiceUtils.state_to_synodic(primary_body(state), secondary_body(state), state.prob.tspan[1])
@@ -135,29 +137,29 @@ function convert_to_frame(state::State{<:EphemerisNBP,<:Abstract_ReferenceFrame}
     converted_u0 = state_to_frame(state, frame, to_synodic, inv_synodic)
     # end
 
-    state = remake(state; frame, u0=converted_u0)
+    state = remake(state; frame, u0 = converted_u0)
     return state
 end
 
-function state_to_frame(state::State{<:EphemerisNBP,InertialFrame}, frame::SynodicFrame{true}, to_synodic, inv_synodic)
+function state_to_frame(state::State{<:EphemerisNBP, InertialFrame}, frame::SynodicFrame{true}, to_synodic, inv_synodic)
     u1 = state_to_frame(state, SynodicFrame(false), to_synodic, inv_synodic)
-    new_state = remake(state, frame=SynodicFrame(false), u0=u1)
+    new_state = remake(state, frame = SynodicFrame(false), u0 = u1)
     return state_to_frame(new_state, frame, to_synodic, inv_synodic)
 end
 
-function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::SynodicFrame{true}, to_synodic, _)
+function state_to_frame(state::State{<:EphemerisNBP, SynodicFrame{false}}, ::SynodicFrame{true}, to_synodic, _)
     secondary_u0 = SpiceUtils.get_state(state.prob.tspan[1], secondary_body(state), primary_body(state))
     synod_secondary_u0 = to_synodic * secondary_u0
     # Normalise the state
     circ_props = R3BPSystemProperties(primary_body(state), secondary_body(state))
     u1 = ordered_u0(state)
     P, V = norm(secondary_u0[1:3]), norm(secondary_u0[4:6])
-    u1[1:3] .= (u1[1:3] - synod_secondary_u0[1:3]) ./ P + [1 - circ_props.μ, 0., 0.]
+    u1[1:3] .= (u1[1:3] - synod_secondary_u0[1:3]) ./ P + [1 - circ_props.μ, 0.0, 0.0]
     u1[4:6] .= (u1[4:6] - synod_secondary_u0[4:6]) ./ V
 
-    if length(u1) == (STATE_DIMS + STATE_DIMS*STATE_DIMS)
+    if length(u1) == (STATE_DIMS + STATE_DIMS * STATE_DIMS)
         # XXX: If there are vareqn. variables, cross-multiply them appropriately
-        vareqns = reshape(@view(u1[STATE_DIMS+1:end]), (STATE_DIMS, STATE_DIMS))
+        vareqns = reshape(@view(u1[(STATE_DIMS + 1):end]), (STATE_DIMS, STATE_DIMS))
         pos_vareqns = @view vareqns[1:3, :]
         vel_vareqns = @view vareqns[4:6, :]
         pos_vareqns .= pos_vareqns ./ P
@@ -167,7 +169,7 @@ function state_to_frame(state::State{<:EphemerisNBP,SynodicFrame{false}}, ::Syno
     return invorder_u0!(state, u1)
 end
 
-function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::SynodicFrame{false}, to_synodic, _)
+function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{true}}, ::SynodicFrame{false}, to_synodic, _)
     secondary_u0 = SpiceUtils.get_state(state.prob.tspan[1], secondary_body(state), primary_body(state))
     synod_secondary_u0 = to_synodic * secondary_u0
     # De-normalise
@@ -177,9 +179,9 @@ function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::Syn
     u1[1:3] .= (u1[1:3] - [1 - circ_props.μ, 0.0, 0.0]) .* P + synod_secondary_u0[1:3]
     u1[4:6] .= u1[4:6] .* V + synod_secondary_u0[4:6]
 
-    if length(u1) == (STATE_DIMS + STATE_DIMS*STATE_DIMS)
+    if length(u1) == (STATE_DIMS + STATE_DIMS * STATE_DIMS)
         # XXX: If there are vareqn. variables, cross-multiply them appropriately
-        vareqns = reshape(@view(u1[STATE_DIMS+1:end]), (STATE_DIMS, STATE_DIMS))
+        vareqns = reshape(@view(u1[(STATE_DIMS + 1):end]), (STATE_DIMS, STATE_DIMS))
         pos_vareqns = @view vareqns[1:3, :]
         vel_vareqns = @view vareqns[4:6, :]
         pos_vareqns .= pos_vareqns .* P
@@ -189,18 +191,18 @@ function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, ::Syn
     return invorder_u0!(state, u1)
 end
 
-function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{true}}, frame, to_synodic, inv_synodic)
+function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{true}}, frame, to_synodic, inv_synodic)
     u1 = state_to_frame(state, SynodicFrame(false), to_synodic, inv_synodic)
-    new_state = remake(state, frame=SynodicFrame(false), u0=u1)
+    new_state = remake(state, frame = SynodicFrame(false), u0 = u1)
     return state_to_frame(new_state, frame, to_synodic, inv_synodic)
 end
 
-function state_to_frame(state::State{<:EphemerisNBP,<:InertialFrame}, ::SynodicFrame{false}, to_synodic, _)
+function state_to_frame(state::State{<:EphemerisNBP, <:InertialFrame}, ::SynodicFrame{false}, to_synodic, _)
     u0 = ordered_u0(state)
     u1 = u0_to_frame(u0, to_synodic)
     return invorder_u0!(state, u1)
 end
-function state_to_frame(state::State{<:EphemerisNBP,<:SynodicFrame{false}}, ::InertialFrame, _, inv_synodic)
+function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{false}}, ::InertialFrame, _, inv_synodic)
     u0 = ordered_u0(state)
     u1 = u0_to_frame(u0, inv_synodic)
     return invorder_u0!(state, u1)
@@ -216,9 +218,9 @@ function u0_to_frame(u0, transform::AbstractMatrix)
     new_u0 = copy(u0)
     new_u0[begin:STATE_DIMS] .= transform * @view(new_u0[1:STATE_DIMS])
 
-    if length(new_u0) == (STATE_DIMS + STATE_DIMS*STATE_DIMS)
+    if length(new_u0) == (STATE_DIMS + STATE_DIMS * STATE_DIMS)
         # XXX: If there are vareqn. variables, cross-multiply them appropriately
-        vareqns = reshape(@view(new_u0[STATE_DIMS+1:end]), (STATE_DIMS, STATE_DIMS))
+        vareqns = reshape(@view(new_u0[(STATE_DIMS + 1):end]), (STATE_DIMS, STATE_DIMS))
         vareqns .= transform * vareqns
     end
 
@@ -233,7 +235,7 @@ end
 
 function check_distance(u, t, system::EphemerisNBP, body, distance)
     if body == primary_body(system)
-        body_pos = SVector{3}(0., 0., 0.)
+        body_pos = SVector{3}(0.0, 0.0, 0.0)
     else
         body_pos = SpiceUtils.get_pos(t, body, primary_body(system))
     end
