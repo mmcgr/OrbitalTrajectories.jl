@@ -22,4 +22,7 @@ using SafeTestsets
     @safetestset "Aqua" begin
         include("aqua.jl")
     end
+    @safetestset "JET" begin
+        include("jet.jl")
+    end
 end
