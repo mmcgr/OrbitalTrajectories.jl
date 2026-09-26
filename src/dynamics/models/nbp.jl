@@ -20,7 +20,7 @@ function NBPSystemProperties(center::Symbol, bodies::Vararg{Symbol})
     center_id = bodn2c(String(center))
     @assert !isnothing(center_id) "Failed to get center ID from SPICE for ($(center))."
     body_ids = @. bodn2c(String(bodies))
-    @assert all(id->!isnothing(id), body_ids) "Failed to get one or more body IDs from SPICE for ($(bodies))."
+    @assert all(id -> !isnothing(id), body_ids) "Failed to get one or more body IDs from SPICE for ($(bodies))."
     μ = SpiceUtils.get_GM.(body_ids)
     return NBPSystemProperties(center, center_id, bodies, body_ids, μ)
 end
@@ -38,7 +38,7 @@ end
 
 # NB: Need the parameter name "T" in place for @memoize to work
 @memoize function ModelingToolkitBase.System(T::Type{_NBP_ODEFunctions}, props::NBPSystemProperties; name = :EphemerisNBP)
-    @parameters t  # Time in J2000 epoch
+    @independent_variables t  # Time in J2000 epoch
     @variables x(t) y(t) z(t) xˍt(t) yˍt(t) zˍt(t)
     D2 = Differential(t)^2
 
@@ -104,10 +104,6 @@ end
 
 Base.show(io::IO, x::EphemerisNBP) = print(io, "$(nameof(typeof(x)))$(x.props)")
 ModelingToolkit.parameters(::EphemerisNBP) = SVector{0, Float64}()
-function _expected_vars(sys::EphemerisNBP)
-    sys = sys.ode.ode_system
-    return [sys.x, sys.y, sys.z, sys.xˍt, sys.yˍt, sys.zˍt]
-end
 
 # HELPERS
 

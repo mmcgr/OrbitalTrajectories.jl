@@ -72,16 +72,34 @@ ModelingToolkit.varmap_to_vars(model::Abstract_DynamicalModel, varmap) = Modelin
 SciMLBase.isinplace(::Abstract_DynamicalModel) = true
 SciMLBase.isinplace(f::Abstract_DynamicalModel, _) = isinplace(f)
 function Base.getproperty(x::M, b::Symbol) where {M <: Abstract_DynamicalModel}
-    if hasproperty(x, b)
-        return getfield(x, b)
+    if b === :ode
+        return getfield(x, :ode)
+    elseif b === :props
+        return getfield(x, :props)
     end
-    return getproperty(x.ode, b)
+
+    return getproperty(getfield(x, :ode), b)
 end
 function Base.getproperty(x::F, b::Symbol) where {F <: Abstract_ModelODEFunctions}
-    if hasproperty(x, b)
-        return getfield(x, b)
+    if b === :ode_system
+        return getfield(x, :ode_system)
+    elseif b === :ode_f
+        return getfield(x, :ode_f)
+    elseif b === :ode_stm_f
+        return getfield(x, :ode_stm_f)
     end
-    return getproperty(x.ode_system, b)
+
+    return getproperty(getfield(x, :ode_system), b)
+end
+
+function Base.propertynames(x::M, private::Bool = false) where {M <: Abstract_DynamicalModel}
+    ode_fields = propertynames(getfield(x, :ode), private)
+    return (:ode, :props, ode_fields...)
+end
+
+function Base.propertynames(x::F, private::Bool = false) where {F <: Abstract_ModelODEFunctions}
+    ode_system_fields = propertynames(getfield(x, :ode_system), private)
+    return (:ode_system, :ode_f, :ode_stm_f, ode_system_fields...)
 end
 
 ModelingToolkit.get_systems(::Abstract_ModelODEFunctions) = []
@@ -92,9 +110,11 @@ Base.nameof(f::Abstract_ModelODEFunctions) = nameof(typeof(f))
 
 function parameter_map(model::M) where {M <: Abstract_DynamicalModel}
     d = Dict{Num, Float64}()
-    for p in parameters(model.ode)
-        s = Symbol(p)
-        d[p] = getproperty(model.props, s)
+    # Check the simpler model parameters first
+    isempty(parameters(model)) && return d
+    # Generate k => v pairs for the parameter map
+    for p in parameters(model.ode.ode_system)
+        d[p] = getproperty(model.props, p.name)
     end
     return d
 end

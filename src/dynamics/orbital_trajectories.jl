@@ -72,13 +72,14 @@ SciMLBase.remake(state::State; model = state.model, frame = state.frame, kwargs.
     State(model, frame, remake(state.prob; kwargs...))
 ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.model)
 
-function _expected_vars(model::M) where {M <: Abstract_DynamicalModel}
-    sys = model.ode.ode_system
-    return [sys.x, sys.y, sys.z, sys.xˍf, sys.yˍf, sys.zˍf]
-end
 function _model_ordering(model::M) where {M <: Abstract_DynamicalModel}
-    expected_us = _expected_vars(model)
-    return [findfirst(uu -> isequal(u, uu), unknowns(model.ode.ode_system)) for u in expected_us]
+    expected_us = propertynames(model.ode.ode_system)
+    order = Int64[]
+    for u in expected_us
+        pos = findfirst(uu -> isequal(u, uu.f.name), unknowns(model.ode.ode_system))
+        isnothing(pos) || push!(order, pos)
+    end
+    return order
 end
 
 # Given a state and a state array u0 ordered by the states uknowns, return u0 ordered by
@@ -124,17 +125,49 @@ Base.lastindex(traj::Trajectory, idx) = lastindex(traj.sol, idx)
 Base.size(traj::Trajectory) = size(traj.sol)
 
 function Base.getproperty(x::State, b::Symbol)
-    if hasfield(State, b)
-        return getfield(x, b)
+    if b === :model
+        return getfield(x, :model)
+    elseif b === :frame
+        return getfield(x, :frame)
+    elseif b === :prob
+        return getfield(x, :prob)
     end
-    return getproperty(x.prob, b)
+
+    prob = getfield(x, :prob)
+    if b === :u0
+        return getfield(prob, :u0)
+    end
+
+    return getproperty(prob, b)
 end
 
 function Base.getproperty(x::Trajectory, b::Symbol)
-    if hasfield(Trajectory, b)
-        return getfield(x, b)
+    if b === :model
+        return getfield(x, :model)
+    elseif b === :frame
+        return getfield(x, :frame)
+    elseif b === :sol
+        return getfield(x, :sol)
     end
-    return getproperty(x.sol, b)
+
+    sol = getfield(x, :sol)
+    if b === :u
+        return getfield(sol, :u)
+    elseif b === :t
+        return getfield(sol, :t)
+    end
+
+    return getproperty(sol, b)
+end
+
+function Base.propertynames(x::State, private::Bool = false)
+    prob_fields = propertynames(getfield(x, :prob), private)
+    return (:model, :frame, :prob, prob_fields...)
+end
+
+function Base.propertynames(x::Trajectory, private::Bool = false)
+    sol_fields = propertynames(getfield(x, :sol), private)
+    return (:model, :frame, :sol, sol_fields...)
 end
 
 #---------#

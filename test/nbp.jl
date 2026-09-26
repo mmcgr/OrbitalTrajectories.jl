@@ -13,16 +13,15 @@ using DifferentialEquations
     # Test that converting to and from inertial frames works
     inert_prob = convert_to_frame(prob, InertialFrame())
     synod_prob = convert_to_frame(inert_prob, SynodicFrame())
-    # TODO: Don't assume the u0 ordering is changed in the same way
-    @test synod_prob.prob.u0 ≈ prob.u0
+    @test ordered_u0(synod_prob) ≈ ordered_u0(prob)
 
     # Test that converting to/from non-normalised frames also works
     synod_nonorm_prob = convert_to_frame(prob, SynodicFrame(false))
     synod_norm_prob = convert_to_frame(synod_nonorm_prob, SynodicFrame(true))
-    @test synod_norm_prob.prob.u0 ≈ prob.prob.u0
+    @test ordered_u0(synod_norm_prob) ≈ ordered_u0(prob)
     inert_prob2 = convert_to_frame(synod_nonorm_prob, InertialFrame())
     synod_nonorm_prob2 = convert_to_frame(inert_prob2, SynodicFrame(false))
-    @test synod_nonorm_prob2.prob.u0 ≈ synod_nonorm_prob.prob.u0
+    @test ordered_u0(synod_nonorm_prob2) ≈ ordered_u0(synod_nonorm_prob)
 
     # Roughly in decreasing order of allocations (30μs~40μs, allocations 8 to 38)
     # @btime convert_to_frame(prob, InertialFrame())  # norm -> inert
