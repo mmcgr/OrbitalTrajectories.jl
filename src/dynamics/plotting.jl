@@ -236,7 +236,8 @@ end
             linewidth := 0.75
             label := nolabels ? "" : "Origin of $(titlecase(String(secondary_body(model))))"
             line_z := nothing
-            if vars[1] == 1
+            # TODO: Make the xyz rearrangement hackery make sense, or at least be consistent
+            if vars[1] == 3
                 [1 - circ_props.μ]
             else
                 [0.0]
@@ -256,7 +257,8 @@ end
             markersize := 3
             label := nolabels ? "" : "Libration points"
             line_z := nothing
-            [l[idx1] for l in L], [l[idx2] for l in L]
+            # Plot (x, y) coordinates
+            [l[1] for l in L], [l[2] for l in L]
         else
             [], []
         end
