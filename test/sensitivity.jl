@@ -92,7 +92,7 @@ end
 
 @testset "EphemerisNBP STM computation - absolute" begin
     function permute_sensitivity(state, a)
-        p = OrbitalTrajectories.Dynamics._model_ordering(state.model)
+        p = OrbitalTrajectories.Dynamics.get_model_order(state.model)
         return a[p, p]
     end
     u0 = [0.8574053516112442, 0.0, 0.0, 0.0, 0.47, 0.0]
@@ -110,17 +110,17 @@ end
     ]
     # Compute final STM
     STM_AD = sensitivity(AD, state)
-    STM_AD .= STM_AD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
+    STM_AD .= STM_AD[:, OrbitalTrajectories.Dynamics.get_model_order(state.model)]
     @test STM_AD ≈ expected_STM rtol = 1.0e-5
 
     STM_FD = sensitivity(FD, state)
-    STM_FD .= STM_FD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
+    STM_FD .= STM_FD[:, OrbitalTrajectories.Dynamics.get_model_order(state.model)]
     @test STM_FD ≈ expected_STM rtol = 1.0e-5
 
     # Compute STM trace
     STM_AD_trace = sensitivity_trace(AD, state)
     extracted_STM = extract_STMs([STM_AD_trace.sol[:, end]])[1]
-    STM_FD .= STM_FD[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
-    extracted_STM .= extracted_STM[:, OrbitalTrajectories.Dynamics._model_ordering(state.model)]
+    STM_FD .= STM_FD[:, OrbitalTrajectories.Dynamics.get_model_order(state.model)]
+    extracted_STM .= extracted_STM[:, OrbitalTrajectories.Dynamics.get_model_order(state.model)]
     @test extracted_STM ≈ expected_STM rtol = 1.0e-5
 end

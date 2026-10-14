@@ -52,19 +52,10 @@ SciMLBase.remake(state::State; model = state.model, frame = state.frame, kwargs.
     State(model, frame, remake(state.prob; kwargs...))
 ModelingToolkit.parameters(state::State) = ModelingToolkit.parameters(state.model)
 
-function _model_ordering(model::M) where {M <: Abstract_DynamicalModel}
-    expected_us = propertynames(model.ode.ode_system)
-    order = Int64[]
-    for u in expected_us
-        pos = findfirst(uu -> isequal(u, uu.f.name), unknowns(model.ode.ode_system))
-        isnothing(pos) || push!(order, pos)
-    end
-    return order
-end
-
 # Generate a map from expected unknowns using an initial state array.
 # The input u0 is expected to be in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
 function varmap(model::M, u0::AbstractArray{Float64}) where {M <: Abstract_DynamicalModel}
+    @assert length(u0) == length(unknowns(model.ode.ode_system))
     return vcat(u0_input_map(model, u0), parameter_map(model))
 end
 
