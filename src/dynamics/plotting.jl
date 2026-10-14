@@ -273,7 +273,7 @@ end
 @recipe function f(state::State)
     seriestype := :scatter
     # TODO: Is this used, and should it respect :idxs?
-    u0 = ordered_u0(state)
+    u0 = base_ordered_u0(state)
     ([u0[1]], [u0[2]])
 end
 

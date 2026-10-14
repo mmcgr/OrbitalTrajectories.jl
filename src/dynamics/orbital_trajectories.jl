@@ -6,25 +6,6 @@ export collision, check_distance, crashed
 # ORBITAL PROBLEMS #
 #------------------#
 
-function _unknowns_default_ordering(model::M) where {M <: Abstract_DynamicalModel}
-    iv = independent_variable(model.ode.ode_system)
-    D = Differential(iv)
-
-    us = [model.x, model.y, model.z, D(model.x), D(model.y), D(model.z)]
-    return us
-end
-
-# Generate a map from expected unknowns using an initial state array.
-# The input u0 is expected to be in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
-function u0_map(model::M, u0::AbstractArray{Float64}) where {M <: Abstract_DynamicalModel}
-    us = _unknowns_default_ordering(model)
-    d = Dict{Num, Float64}(@. (us .=> u0))
-
-    merge!(d, parameter_map(model))
-
-    return d
-end
-
 struct State{
         M <: Abstract_DynamicalModel,
         F <: Abstract_ReferenceFrame,
@@ -40,12 +21,11 @@ end
 
 State(model::Abstract_DynamicalModel, u0::AbstractArray, tspan) = State(model, default_reference_frame(model), u0, tspan)
 State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::AbstractArray{Float64}, tspan) =
-    State(model, reference_frame, u0_map(model, u0), tspan)
+    State(model, reference_frame, varmap(model, u0), tspan)
 # Fallback for u0 arrays that are not Float64
 State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, u0::AbstractArray, tspan) =
     State(model, reference_frame, ODEProblem(model, u0, tspan, parameters(model)))
-# TODO: Convince ODEProblem to work better with DynamicModel + dict.
-State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, d::Dict{Num, Float64}, tspan) =
+State(model::Abstract_DynamicalModel, reference_frame::Abstract_ReferenceFrame, d::Vector{Pair{Num, Float64}}, tspan) =
     State(model, reference_frame, ODEProblem(model.ode.ode_system, d, tspan))
 
 struct Trajectory{
@@ -82,22 +62,20 @@ function _model_ordering(model::M) where {M <: Abstract_DynamicalModel}
     return order
 end
 
-# Given a state and a state array u0 ordered by the states uknowns, return u0 ordered by
-# [x, y, z, Dx(x), Dx(y), Dx(z)]
-order_u0(state::State, u0::AbstractArray) = order_u0(state.model, u0)
-order_u0!(state::State, u0::AbstractArray) = order_u0!(state.model, u0)
+# Generate a map from expected unknowns using an initial state array.
+# The input u0 is expected to be in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
+function varmap(model::M, u0::AbstractArray{Float64}) where {M <: Abstract_DynamicalModel}
+    return vcat(u0_input_map(model, u0), parameter_map(model))
+end
 
-# Given a state and a state array u0 ordered by the states unknowns, return u0 invordered by
-# [x, y, z, Dx(x), Dx(y), Dx(z)]
-invorder_u0!(state::State, u0::AbstractArray) = invorder_u0!(state.model, u0)
+to_base_order(state::State, u0::AbstractArray) = to_base_order(state.model, u0)
+to_base_order!(state::State, u0::AbstractArray) = to_base_order!(state.model, u0)
 
-order_u0(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = u0[_model_ordering(model)]
-order_u0!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = u0 .= u0[_model_ordering(model)]
-
-invorder_u0!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = invpermute!(u0, _model_ordering(model))
+to_model_order(state::State, xyz::AbstractArray) = to_model_order(state.model, xyz)
+to_model_order!(state::State, xyz::AbstractArray) = to_model_order!(state.model, xyz)
 
 # Return u0 in the order [x, y, z, Dx(x), Dx(y), Dx(z)]
-ordered_u0(state::State) = order_u0(state, state.u0)
+base_ordered_u0(state::State) = to_base_order(state, state.u0)
 
 #---------------#
 # INTERPOLATION #

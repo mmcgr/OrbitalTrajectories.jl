@@ -108,15 +108,26 @@ ModelingToolkit.get_unknowns(f::Abstract_ModelODEFunctions) = ModelingToolkit.ge
 ModelingToolkit.get_ps(f::Abstract_ModelODEFunctions) = ModelingToolkit.get_ps(f.ode_system)
 Base.nameof(f::Abstract_ModelODEFunctions) = nameof(typeof(f))
 
+# Given a state and a state array u0 ordered by the states uknowns, return u0 ordered by
+# [x, y, z, Dx(x), Dx(y), Dx(z)]
+to_base_order!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = invpermute!(u0, get_model_order(model))
+to_base_order(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = to_base_order!(model, copy(u0))
+
+# Given a state and an array u0 ordered by [x, y, z, Dx(x), Dx(y), Dx(z)]
+# Return u0 ordered by the states unknowns
+to_model_order!(model::M, xyz::AbstractArray) where {M <: Abstract_DynamicalModel} = permute!(xyz, get_model_order(model))
+to_model_order(model::M, xyz::AbstractArray) where {M <: Abstract_DynamicalModel} = to_model_order!(model, copy(xyz))
+
 function parameter_map(model::M) where {M <: Abstract_DynamicalModel}
-    d = Dict{Num, Float64}()
+    v = Vector{Pair{Num, Float64}}()
     # Check the simpler model parameters first
-    isempty(parameters(model)) && return d
+    isempty(parameters(model)) && return v
     # Generate k => v pairs for the parameter map
     for p in parameters(model.ode.ode_system)
-        d[p] = getproperty(model.props, p.name)
+        push!(v, p => getproperty(model.props, p.name))
     end
-    return d
+
+    return v
 end
 
 #----------#

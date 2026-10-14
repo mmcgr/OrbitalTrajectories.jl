@@ -64,7 +64,7 @@ function convert_u!(u::AbstractArray{A, 1}, t::Float64, traj::Trajectory, frame:
     new_state = convert_to_frame(tmp_state, frame)
     # TODO: return state order
     #u.= new_state.u0
-    return u .= ordered_u0(new_state)
+    return u .= base_ordered_u0(new_state)
 end
 
 const CRASHED_RETCODE = SciMLBase.ReturnCode.Terminated

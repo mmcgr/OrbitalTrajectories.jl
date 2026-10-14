@@ -39,13 +39,12 @@ end
 # NB: Need the parameter name "T" in place for @memoize to work
 @memoize function ModelingToolkitBase.System(T::Type{_NBP_ODEFunctions}, props::NBPSystemProperties; name = :EphemerisNBP)
     @independent_variables t  # Time in J2000 epoch
-    @variables x(t) y(t) z(t) xˍt(t) yˍt(t) zˍt(t)
+    @variables x(t) y(t) z(t)
     D2 = Differential(t)^2
 
     accelerations = zeros(Num, 3)
     pos = [x, y, z]
     # Full position vector including time derivatives so we can easily refer to them later.
-    full_pos = [pos..., xˍt, yˍt, zˍt]
 
     for (body, μ) in zip(props.bodies, props.μ)
         # See also [DeiTos2017, Eqs. 14], [JTOP implementation], [Ozaki2017, Eq.2]
@@ -83,7 +82,7 @@ end
         ]
     )
     # Build the 2nd-order ODE props
-    return System(eqs, t, full_pos, []; name)
+    return System(eqs, t, pos, []; name)
 end
 
 #---------------------#
@@ -104,6 +103,31 @@ end
 
 Base.show(io::IO, x::EphemerisNBP) = print(io, "$(nameof(typeof(x)))$(x.props)")
 ModelingToolkit.parameters(::EphemerisNBP) = SVector{0, Float64}()
+
+function _known_unknowns(model::EphemerisNBP)
+    @independent_variables  t  # True anomaly
+    @variables   x(t) y(t) z(t)
+    D = Differential(t)
+    eqs = equations(model.ode.ode_system)
+
+    # map Dx, Dy, Dz to the corresponding simplified system eqs
+    sDx = eqs[findfirst(e->isequal(e.lhs, D(x)), eqs)].rhs
+    sDy = eqs[findfirst(e->isequal(e.lhs, D(y)), eqs)].rhs
+    sDz = eqs[findfirst(e->isequal(e.lhs, D(z)), eqs)].rhs
+
+    return Num[x, y, z, sDx, sDy, sDz]
+end
+
+u0_input_map(model::EphemerisNBP, u0::AbstractArray) = Vector(_known_unknowns(model) .=> u0)
+
+# Map the state vector [x, y, z, Dx(f), Dy(f), Dz(f)] to the model's u0 ordering.
+# e.g. xyz_to_u0(model, [1, 2, 3, 4, 5, 6]) might return [4, 1, 5, 2, 6, 3]
+function get_model_order(model::M) where {M <: EphemerisNBP}
+    uns = unknowns(model.ode.ode_system)
+    knowns = _known_unknowns(model)
+    return [findfirst(isequal(k), uns) for k in knowns]
+end
+varmap(model::EphemerisNBP, u0::AbstractArray{Float64}) = u0_input_map(model, u0)
 
 # HELPERS
 
@@ -150,7 +174,7 @@ function state_to_frame(state::State{<:EphemerisNBP, SynodicFrame{false}}, ::Syn
     synod_secondary_u0 = to_synodic * secondary_u0
     # Normalise the state
     circ_props = R3BPSystemProperties(primary_body(state), secondary_body(state))
-    u1 = ordered_u0(state)
+    u1 = base_ordered_u0(state)
     P, V = norm(secondary_u0[1:3]), norm(secondary_u0[4:6])
     u1[1:3] .= (u1[1:3] - synod_secondary_u0[1:3]) ./ P + [1 - circ_props.μ, 0.0, 0.0]
     u1[4:6] .= (u1[4:6] - synod_secondary_u0[4:6]) ./ V
@@ -164,7 +188,7 @@ function state_to_frame(state::State{<:EphemerisNBP, SynodicFrame{false}}, ::Syn
         vel_vareqns .= vel_vareqns ./ V
     end
 
-    return invorder_u0!(state, u1)
+    return to_model_order!(state, u1)
 end
 
 function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{true}}, ::SynodicFrame{false}, to_synodic, _)
@@ -172,7 +196,7 @@ function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{true}}, ::Sy
     synod_secondary_u0 = to_synodic * secondary_u0
     # De-normalise
     circ_props = R3BPSystemProperties(primary_body(state), secondary_body(state))
-    u1 = ordered_u0(state)
+    u1 = base_ordered_u0(state)
     P, V = norm(secondary_u0[1:3]), norm(secondary_u0[4:6])
     u1[1:3] .= (u1[1:3] - [1 - circ_props.μ, 0.0, 0.0]) .* P + synod_secondary_u0[1:3]
     u1[4:6] .= u1[4:6] .* V + synod_secondary_u0[4:6]
@@ -186,7 +210,7 @@ function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{true}}, ::Sy
         vel_vareqns .= vel_vareqns .* V
     end
 
-    return invorder_u0!(state, u1)
+    return to_model_order!(state, u1)
 end
 
 function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{true}}, frame, to_synodic, inv_synodic)
@@ -196,14 +220,14 @@ function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{true}}, fram
 end
 
 function state_to_frame(state::State{<:EphemerisNBP, <:InertialFrame}, ::SynodicFrame{false}, to_synodic, _)
-    u0 = ordered_u0(state)
+    u0 = base_ordered_u0(state)
     u1 = u0_to_frame(u0, to_synodic)
-    return invorder_u0!(state, u1)
+    return to_model_order!(state, u1)
 end
 function state_to_frame(state::State{<:EphemerisNBP, <:SynodicFrame{false}}, ::InertialFrame, _, inv_synodic)
-    u0 = ordered_u0(state)
+    u0 = base_ordered_u0(state)
     u1 = u0_to_frame(u0, inv_synodic)
-    return invorder_u0!(state, u1)
+    return to_model_order!(state, u1)
 end
 
 # Dispatch on MVectors

@@ -1,5 +1,5 @@
 using OrbitalTrajectories
-using OrbitalTrajectories.Dynamics: convert_to_frame, convert_u!, order_u0!, ordered_u0
+using OrbitalTrajectories.Dynamics: convert_to_frame, convert_u!, to_base_order!, base_ordered_u0
 using DynamicQuantities
 using SciMLBase: solve
 
@@ -34,7 +34,7 @@ test_cases = [
         cr3bp = CR3BP(case.system...; μ = case.μ)
         state = State(cr3bp, SynodicFrame(false), case.u0, case.tspan)
 
-        @test case.u0 ≈ ordered_u0(state)
+        @test case.u0 ≈ base_ordered_u0(state)
 
         state1 = convert_to_frame(state, SynodicFrame(false))
         @test state1 === state
@@ -46,7 +46,7 @@ test_cases = [
 
         state3 = convert_to_frame(state, InertialFrame())
         expected_u0 = copy(case.u0)
-        @test expected_u0 ≈ ordered_u0(state)
+        @test expected_u0 ≈ base_ordered_u0(state)
     end
 end
 
@@ -55,7 +55,7 @@ end
         er3bp = ER3BP(case.system...; μ = case.μ)
         state = State(er3bp, SynodicFrame(false), case.u0, case.tspan)
 
-        @test case.u0 ≈ ordered_u0(state)
+        @test case.u0 ≈ base_ordered_u0(state)
 
         state1 = convert_to_frame(state, SynodicFrame(false))
         @test state1 === state
@@ -67,7 +67,7 @@ end
 
         state3 = convert_to_frame(state, InertialFrame())
         expected_u0 = copy(case.u0)
-        @test expected_u0 ≈ ordered_u0(state)
+        @test expected_u0 ≈ base_ordered_u0(state)
     end
 end
 
@@ -78,7 +78,7 @@ end
         eph = EphemerisNBP(case.system..., :Sun)
         state = State(eph, SynodicFrame(false), case.u0, tspan_epoch)
 
-        @test case.u0 ≈ ordered_u0(state)
+        @test case.u0 ≈ base_ordered_u0(state)
 
         state1 = convert_to_frame(state, SynodicFrame(false))
         @test state1 === state
@@ -86,11 +86,11 @@ end
         # Invalid
         state2 = convert_to_frame(state, SynodicFrame(true))
         expected_u0 = copy(case.u0)
-        @test expected_u0 ≈ ordered_u0(state)
+        @test expected_u0 ≈ base_ordered_u0(state)
 
         state3 = convert_to_frame(state, InertialFrame())
         expected_u0 = copy(case.u0)
-        @test expected_u0 ≈ ordered_u0(state)
+        @test expected_u0 ≈ base_ordered_u0(state)
     end
 end
 
@@ -110,7 +110,7 @@ end
     ]
 
     for (i, pos) in positions
-        expected_u0 = order_u0!(traj.model, copy(pos))
+        expected_u0 = to_base_order!(traj.model, copy(pos))
         @test traj_st.sol[:, i] ≈ expected_u0 atol = 1.0e-4
     end
 
@@ -139,7 +139,7 @@ end
     ]
     # Translate from x,y,z to the order used by the state
     for position in positions
-        order_u0!(state, position[2])
+        to_base_order!(state, position[2])
     end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)
@@ -161,7 +161,7 @@ end
     ]
     # Translate from x,y,z to the order used by the state
     for position in positions
-        order_u0!(state, position[2])
+        to_base_order!(state, position[2])
     end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)
@@ -183,7 +183,7 @@ end
     ]
     # Translate from x,y,z to the order used by the state
     for position in positions
-        order_u0!(state, position[2])
+        to_base_order!(state, position[2])
     end
     for (t, u0, expected_newu0) in positions
         actual_newu0 = copy(u0)

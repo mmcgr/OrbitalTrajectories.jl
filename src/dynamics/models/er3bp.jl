@@ -14,7 +14,7 @@ function ModelingToolkitBase.System(::Type{_ER3BP_ODEFunctions}; name = :ER3BP)
     @parameters  μ  # Mass fraction
     @parameters  e  # Eccentricity
     @independent_variables  f  # True anomaly
-    @variables   x(f) y(f) z(f) xˍf(f) yˍf(f) zˍf(f)
+    @variables   x(f) y(f) z(f)
     D, D2 = Differential(f), Differential(f)^2
     Dx, Dy, Dz = Differential.((x, y, z))
 
@@ -31,7 +31,7 @@ function ModelingToolkitBase.System(::Type{_ER3BP_ODEFunctions}; name = :ER3BP)
     system = System(
         eqs,
         f,
-        [x, y, z, xˍf, yˍf, zˍf],
+        [x, y, z],
         [μ, e];
         name
     )
@@ -62,6 +62,32 @@ struct ER3BP{O <: _ER3BP_ODEFunctions, P <: R3BPSystemProperties} <: Abstract_R3
 end
 ER3BP(a::Symbol, b::Symbol; kwargs...) = ER3BP(ER3BP_ODEFunctions, R3BPSystemProperties(a, b; kwargs...))
 ER3BP(system::Abstract_DynamicalModel; kwargs...) = ER3BP(ER3BP_ODEFunctions, R3BPSystemProperties(system; kwargs...))
+
+function _known_unknowns(model::M) where {M <: Abstract_R3BPModel}
+    @independent_variables  f  # True anomaly
+    @variables   x(f) y(f) z(f)
+    D = Differential(f)
+    eqs = equations(model.ode.ode_system)
+
+    # map Dx, Dy, Dz to the corresponding simplified system eqs
+    sDx = eqs[findfirst(e->isequal(e.lhs, D(x)), eqs)].rhs
+    sDy = eqs[findfirst(e->isequal(e.lhs, D(y)), eqs)].rhs
+    sDz = eqs[findfirst(e->isequal(e.lhs, D(z)), eqs)].rhs
+
+    return Num[x, y, z, sDx, sDy, sDz]
+end
+
+function u0_input_map(model::M, u0::AbstractArray) where {M <: Abstract_R3BPModel}
+    return Vector(_known_unknowns(model) .=> u0)
+end
+
+# Map the state vector [x, y, z, Dx(f), Dy(f), Dz(f)] to the model's u0 ordering.
+# e.g. xyz_to_u0(model, [1, 2, 3, 4, 5, 6]) might return [4, 1, 5, 2, 6, 3]
+function get_model_order(model::M) where {M <: Abstract_R3BPModel}
+    uns = unknowns(model.ode.ode_system)
+    knowns = _known_unknowns(model)
+    return [findfirst(isequal(k), uns) for k in knowns]
+end
 
 # XXX: The parameters overload below gives us a performance boost.
 ModelingToolkit.parameters(model::ER3BP) = SVector(model.props.μ, model.props.e)

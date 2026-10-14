@@ -62,3 +62,17 @@ struct BC4BP{O <: _BC4BP_ODEFunctions, P <: R4BPSystemProperties} <: Abstract_R3
     props::P
 end
 BC4BP(args...; kwargs...) = BC4BP(BC4BP_ODEFunctions, R4BPSystemProperties(args...; kwargs...))
+
+function _known_unknowns(model::BC4BP)
+    @independent_variables  t  # True anomaly
+    @variables   x(t) y(t) z(t)
+    D = Differential(t)
+    eqs = equations(model.ode.ode_system)
+
+    # map Dx, Dy, Dz to the corresponding simplified system eqs
+    sDx = eqs[findfirst(e->isequal(e.lhs, D(x)), eqs)].rhs
+    sDy = eqs[findfirst(e->isequal(e.lhs, D(y)), eqs)].rhs
+    sDz = eqs[findfirst(e->isequal(e.lhs, D(z)), eqs)].rhs
+
+    return Num[x, y, z, sDx, sDy, sDz]
+end
