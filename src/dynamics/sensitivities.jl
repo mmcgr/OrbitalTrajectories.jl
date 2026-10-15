@@ -30,10 +30,12 @@ function sensitivity(::Val{:FiniteDiff}, state, desired_frame = state.frame, alg
         return convert_to_frame(solve(new_state, alg; kwargs...), desired_frame).sol[:, end]
     end
 end
-function sensitivity(v::Val{:VariationalEquations}, state, args...; kwargs...)
+function sensitivity(v::Val{:VariationalEquations}, state::State, args...; kwargs...)
     STM_VE = sensitivity_trace(v, state, args...; kwargs...).sol[:, end]
     dim = length(state.u0)
-    return reshape(STM_VE[(dim + 1):end], (dim, dim))
+    # Assumes that the flattened identiy matrix comes first in the state vector,
+    # a bold assumption.
+    return reshape(STM_VE[1:end - dim], (dim, dim))
 end
 
 @doc """ Sensitivity of the full propagated trajectory with respect to initial state. """
@@ -59,7 +61,25 @@ end
 @traitfn function sensitivity_trace(::Val{:VariationalEquations}, state::S, desired_frame = state.frame, alg = DEFAULT_ALG; kwargs...) where {{S; HasVE{S}}}
     dim = length(state.u0)
     I_flat = reshape(Matrix{Float64}(I, dim, dim), dim^2)
-    u0_STM = MVector{dim^2 + dim}(vcat(state.u0, I_flat))
+    # Expand u0 and reorder it to match the STM matrix
+    expand_u0(_, _) = MVector{dim^2 + dim}(vcat(I_flat, state.u0))
+    function expand_u0(ode_system::System, ode_stm_f::ODEFunction)
+        # Assumes that the flattened identity matrix is in an unchanged order, and that the
+        # original unknowns follow. a bold assumption. Currently, this function is equivalent to 
+        # return MVector{dim^2 + dim}(vcat(I_flat, state.u0[[4,1,5,2,6,3]]))
+        u0_STM = I_flat
+        stm_unknowns = unknowns(ode_stm_f.sys)
+        og_unknowns = unknowns(ode_system)
+        order = [(findfirst(uu -> isequal(u, uu), stm_unknowns), u) for u in og_unknowns]
+        sort!(order)
+        for u in order
+            index = findfirst(uu->isequal(u[2], uu), og_unknowns)
+            insert!(u0_STM, u[1], state.u0[index])
+        end
+        return u0_STM
+    end
+
+    u0_STM = expand_u0(state.model.ode.ode_system, state.model.ode.ode_stm_f)
     prob_vareqns = State(state.model, state.frame, ODEProblem(state.model.ode.ode_stm_f, u0_STM, state.tspan, state.p))
     traj_vareqns_unconverted = solve(prob_vareqns, alg; kwargs...)
 

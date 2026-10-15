@@ -40,7 +40,6 @@ function CR3BP{nothandcoded}(props::R3BPSystemProperties; kwargs...) where {noth
     return CR3BP{false, typeof(ode), typeof(props)}(ode, props)
 end
 
-# XXX: The parameters overload below gives us a performance boost.
 ModelingToolkit.parameters(model::CR3BP{false}) = SVector(model.props.μ)
 
 # Hand-coded CR3BP
@@ -80,19 +79,19 @@ end
 function handcodedCR3BP_withSTM(du, u, p, t)
     return @inbounds begin
         μ = p[1]
-        x, y, z, x̂, ŷ, ẑ = u
+        x, y, z, x̂, ŷ, ẑ = u[37:42]
         (d, r) = distance_vectors(μ, (x, y, z))
         d3, d5 = d^3, d^5
         r3, r5 = r^3, r^5
         r1, r2 = (1 - μ, μ) ./ ((d, r) .^ 3)
         A, B = 3 * (1 - μ) / d5, 3 * μ / r5
 
-        du[1] = x̂
-        du[2] = ŷ
-        du[3] = ẑ
-        du[4] = 2ŷ + x - r1 * (μ + x) + r2 * (1 - μ - x)
-        du[5] = -2x̂ + y - r1 * y - r2 * y
-        du[6] = - r1 * z - r2 * z
+        du[37] = x̂
+        du[38] = ŷ
+        du[39] = ẑ
+        du[40] = 2ŷ + x - r1 * (μ + x) + r2 * (1 - μ - x)
+        du[41] = -2x̂ + y - r1 * y - r2 * y
+        du[42] = - r1 * z - r2 * z
 
         XX = 1 - (1 - μ) / d3 - μ / r3 + A * (x + μ)^2 + B * (x - 1 + μ)^2
         XY = A * (x + μ) * y + B * (x - 1 + μ) * y
@@ -100,6 +99,13 @@ function handcodedCR3BP_withSTM(du, u, p, t)
         YY = 1 - (1 - μ) / d3 - μ / r3 + A * y^2 + B * y^2
         YZ = A * y * z + B * y * z
         ZZ = -(1 - μ) / d3 - μ / r3 + A * z^2 + B * z^2
+
+        du[1] = u[4]
+        du[2] = u[5]
+        du[3] = u[6]
+        du[4] = XX * u[1] + XY * u[2] + XZ * u[3] + 2 * u[5]
+        du[5] = XY * u[1] + YY * u[2] + YZ * u[3] - 2 * u[4]
+        du[6] = XZ * u[1] + YZ * u[2] + ZZ * u[3]
 
         du[7] = u[10]
         du[8] = u[11]
@@ -135,12 +141,5 @@ function handcodedCR3BP_withSTM(du, u, p, t)
         du[34] = XX * u[31] + XY * u[32] + XZ * u[33] + 2 * u[35]
         du[35] = XY * u[31] + YY * u[32] + YZ * u[33] - 2 * u[34]
         du[36] = XZ * u[31] + YZ * u[32] + ZZ * u[33]
-
-        du[37] = u[40]
-        du[38] = u[41]
-        du[39] = u[42]
-        du[40] = XX * u[37] + XY * u[38] + XZ * u[39] + 2 * u[41]
-        du[41] = XY * u[37] + YY * u[38] + YZ * u[39] - 2 * u[40]
-        du[42] = XZ * u[37] + YZ * u[38] + ZZ * u[39]
     end
 end

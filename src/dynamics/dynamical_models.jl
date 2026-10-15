@@ -113,8 +113,8 @@ Base.nameof(f::Abstract_ModelODEFunctions) = nameof(typeof(f))
 to_base_order!(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = invpermute!(u0, get_model_order(model))
 to_base_order(model::M, u0::AbstractArray) where {M <: Abstract_DynamicalModel} = to_base_order!(model, copy(u0))
 
-# Given a state and an array u0 ordered by [x, y, z, Dx(x), Dx(y), Dx(z)]
-# Return u0 ordered by the states unknowns
+# Given a state and an array u0 ordered by [x, y, z, Dx(x), Dx(y), Dx(z)], return u0 ordered by
+# the states unknowns
 to_model_order!(model::M, xyz::AbstractArray) where {M <: Abstract_DynamicalModel} = permute!(xyz, get_model_order(model))
 to_model_order(model::M, xyz::AbstractArray) where {M <: Abstract_DynamicalModel} = to_model_order!(model, copy(xyz))
 
