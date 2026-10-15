@@ -35,7 +35,7 @@ function sensitivity(v::Val{:VariationalEquations}, state::State, args...; kwarg
     dim = length(state.u0)
     # Assumes that the flattened identiy matrix comes first in the state vector,
     # a bold assumption.
-    return reshape(STM_VE[1:end - dim], (dim, dim))
+    return reshape(STM_VE[1:(end - dim)], (dim, dim))
 end
 
 @doc """ Sensitivity of the full propagated trajectory with respect to initial state. """
@@ -65,7 +65,7 @@ end
     expand_u0(_, _) = MVector{dim^2 + dim}(vcat(I_flat, state.u0))
     function expand_u0(ode_system::System, ode_stm_f::ODEFunction)
         # Assumes that the flattened identity matrix is in an unchanged order, and that the
-        # original unknowns follow. a bold assumption. Currently, this function is equivalent to 
+        # original unknowns follow. a bold assumption. Currently, this function is equivalent to
         # return MVector{dim^2 + dim}(vcat(I_flat, state.u0[[4,1,5,2,6,3]]))
         u0_STM = I_flat
         stm_unknowns = unknowns(ode_stm_f.sys)
@@ -73,7 +73,7 @@ end
         order = [(findfirst(uu -> isequal(u, uu), stm_unknowns), u) for u in og_unknowns]
         sort!(order)
         for u in order
-            index = findfirst(uu->isequal(u[2], uu), og_unknowns)
+            index = findfirst(uu -> isequal(u[2], uu), og_unknowns)
             insert!(u0_STM, u[1], state.u0[index])
         end
         return u0_STM

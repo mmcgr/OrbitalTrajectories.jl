@@ -73,7 +73,7 @@ base_ordered_u0(state::State) = to_base_order(state, state.u0)
 #---------------#
 
 # Interpolation
-(traj::Trajectory)(t::Number) = State(traj.model, traj.frame, remake(traj.sol.prob; u0=traj.sol(t), tspan=(t, t)))
+(traj::Trajectory)(t::Number) = State(traj.model, traj.frame, remake(traj.sol.prob; u0 = traj.sol(t), tspan = (t, t)))
 function (traj::Trajectory)(t::AbstractArray{<:Number})
     new_sol = SciMLBase.build_solution(traj.prob, traj.alg, t, traj.sol(t); interp = traj.interp, retcode = traj.retcode)
     return Trajectory(traj.model, traj.frame, new_sol)
@@ -83,7 +83,7 @@ end
 Base.getindex(state::State, idx...) = getindex(state.prob.u0, idx...)
 Base.getindex(state::State, idx::Union{Tuple, AbstractArray}) = getindex(state.prob, idx)
 Base.getindex(traj::Trajectory, idx::Int...) = State(traj.model, traj.frame, getindex(traj.sol, idx...), (traj.sol.t[idx...], traj.sol.t[idx...]))
-Base.getindex(traj::Trajectory, idx::Int) = State(traj.model, traj.frame, remake(traj.sol.prob; u0=getindex(traj.sol.u, idx), tspan=(traj.sol.t[idx], traj.sol.t[idx])))
+Base.getindex(traj::Trajectory, idx::Int) = State(traj.model, traj.frame, remake(traj.sol.prob; u0 = getindex(traj.sol.u, idx), tspan = (traj.sol.t[idx], traj.sol.t[idx])))
 Base.getindex(traj::Trajectory, idx::AbstractArray{Int}) = State(traj.model, traj.frame, getindex(traj.sol.u, idx), (traj.sol.t[idx], traj.sol.t[idx]))
 Base.axes(state::State, idx...) = axes(state.prob, idx...)
 Base.axes(traj::Trajectory, idx...) = axes(traj.sol, idx...)

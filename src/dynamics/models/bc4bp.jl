@@ -70,9 +70,9 @@ function _known_unknowns(model::BC4BP)
     eqs = equations(model.ode.ode_system)
 
     # map Dx, Dy, Dz to the corresponding simplified system eqs
-    sDx = eqs[findfirst(e->isequal(e.lhs, D(x)), eqs)].rhs
-    sDy = eqs[findfirst(e->isequal(e.lhs, D(y)), eqs)].rhs
-    sDz = eqs[findfirst(e->isequal(e.lhs, D(z)), eqs)].rhs
+    sDx = eqs[findfirst(e -> isequal(e.lhs, D(x)), eqs)].rhs
+    sDy = eqs[findfirst(e -> isequal(e.lhs, D(y)), eqs)].rhs
+    sDz = eqs[findfirst(e -> isequal(e.lhs, D(z)), eqs)].rhs
 
     return Num[x, y, z, sDx, sDy, sDz]
 end
