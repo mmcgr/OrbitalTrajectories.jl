@@ -52,8 +52,9 @@ end
 ModelingToolkit.parameters(model::CR3BP{true}) = SVector(model.props.μ)
 State(model::CR3BP{true}, frame::F, u0::AbstractArray{Float64}, tspan) where {F <: Abstract_ReferenceFrame} =
     State(model, frame, ODEProblem(model, u0, tspan, parameters(model)))
-to_base_order(_::CR3BP{true}, u0::AbstractArray) = u0
+to_base_order(_::CR3BP{true}, u0::AbstractArray) = copy(u0)
 to_base_order!(_::CR3BP{true}, u0::AbstractArray) = u0
+to_model_order(_::CR3BP{true}, u0::AbstractArray) = copy(u0)
 to_model_order!(_::CR3BP{true}, u0::AbstractArray) = u0
 
 #---------#
