@@ -30,7 +30,7 @@ struct CR3BP{handcoded, O <: _CR3BP_ODEFunctions, P <: R3BPSystemProperties} <: 
 end
 
 # TODO: Move hand-coded functions into :analytical of CR3BP
-CR3BP(args...; kwargs...) = CR3BP{Val{false}}(R3BPSystemProperties(args...; kwargs...))
+CR3BP(a::Symbol, b::Symbol; kwargs...) = CR3BP{Val{false}}(R3BPSystemProperties(a, b; kwargs...))
 function CR3BP{nothandcoded}(props::R3BPSystemProperties; kwargs...) where {nothandcoded <: Val{false}}
     if length(kwargs) == 0
         ode = CR3BP_ODEFunctions
@@ -43,7 +43,7 @@ end
 ModelingToolkit.parameters(model::CR3BP{false}) = SVector(model.props.μ)
 
 # Hand-coded CR3BP
-HandcodedCR3BP(args...; kwargs...) = CR3BP{Val{true}}(R3BPSystemProperties(args...; kwargs...))
+HandcodedCR3BP(a::Symbol, b::Symbol; kwargs...) = CR3BP{Val{true}}(R3BPSystemProperties(a, b; kwargs...))
 function CR3BP{handcoded}(props::R3BPSystemProperties) where {handcoded <: Val{true}}
     ode = _CR3BP_ODEFunctions(nothing, handcodedCR3BP, handcodedCR3BP_withSTM)
     return CR3BP{true, typeof(ode), typeof(props)}(ode, props)
